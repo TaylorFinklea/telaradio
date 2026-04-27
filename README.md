@@ -1,23 +1,23 @@
-# Lockstep
+# Telaradio
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
 
-Open-source focus music. Recipes, not outputs.
+Open-source focus music. Recipes, not outputs. — [telaradio.com](https://telaradio.com)
 
 ## What it is
 
-Lockstep generates music locally and applies amplitude modulation at
+Telaradio generates music locally and applies amplitude modulation at
 beta-range frequencies (~16 Hz by default) to support sustained attention
 via neural phase-locking. The mechanism is described in Woods et al. 2024,
 *Communications Biology* 7:1376
 ([doi:10.1038/s42003-024-07026-3](https://www.nature.com/articles/s42003-024-07026-3)).
 
-A track in Lockstep is a small JSON file — a *recipe* — describing the
+A track in Telaradio is a small JSON file — a *recipe* — describing the
 prompt, seed, model version, and modulation parameters. Clients regenerate
 audio from recipes on demand. This means the entire community library is a
 git repo of ~200-byte files, and contributions are PRs.
 
-**Lockstep makes no productivity or medical claims.** It implements a
+**Telaradio makes no productivity or medical claims.** It implements a
 published mechanism and exposes a bypass toggle so you can A/B test the
 effect for yourself.
 

@@ -8,7 +8,7 @@ Each entry: date, decision, rationale, what it supersedes (if anything).
 See [`../../PHASE_0_REPORT.md`](../../PHASE_0_REPORT.md) for the full
 record. Summary:
 
-1. Codename: **Lockstep**
+1. Codename: **Telaradio**
 2. Platform: **Hybrid** (Rust backend + SvelteKit web + Swift native)
 3. Recipe storage: **Local + GitHub sync**
 4. Modulation UX: **All three modes, switchable in settings**
@@ -26,7 +26,7 @@ Decisions deferred (to be revisited when relevant):
 
 ## 2026-04-27 — Phase 1a recipe-core decisions
 
-1. **GitHub repo**: `TaylorFinklea/lockstep` created public on
+1. **GitHub repo**: `TaylorFinklea/telaradio` created public on
    2026-04-27. Phase 0 scaffold + Phase 1a build pushed as initial
    history.
 2. **Recipe `id` typing**: strict `uuid::Uuid` via the `uuid` crate
@@ -52,3 +52,22 @@ Mid-build judgment calls (logged here rather than re-asking):
 - **Edition 2024**: workspace pins `edition = "2024"` and
   `rust-version = "1.85"`, since the toolchain installed locally is
   rustc 1.95.
+
+## 2026-04-27 — Project rename: Lockstep → Telaradio
+
+The project was codenamed **Lockstep** during the 2026-04-26 session
+(a reference to neural phase-locking, the mechanism this project
+implements per Woods et al. 2024). On 2026-04-27 it was renamed to
+**Telaradio**, with domain `telaradio.com`. All documentation, code,
+the Cargo crate name (`telaradio-core`), and the GitHub repo
+(`TaylorFinklea/telaradio`) were updated in a single commit. Earlier
+entries above have been edited to use the new name; this entry is the
+single record of the rename event.
+
+**Why:** Decision belongs to the user; not re-litigated here. Telaradio
+is distinctive, trademark-clean, single-word, and the `.com` domain is
+secured.
+
+**Implication for future sessions:** if you find a stray reference to
+"Lockstep" anywhere in the repo, it's a leftover from the rename and
+should be updated.

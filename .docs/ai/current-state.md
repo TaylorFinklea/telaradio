@@ -19,12 +19,12 @@ Phase 0 scaffold; second commit is the Phase 1a build. See
 - Phase 0 scaffold (CLAUDE.md, ARCHITECTURE.md, ROADMAP.md, README.md,
   PHASE_0_REPORT.md, LICENSE, CLA.md, `.github/`, module READMEs,
   `.docs/ai/` handoff)
-- Cargo workspace at project root; `lockstep-core` crate under `core/`
+- Cargo workspace at project root; `telaradio-core` crate under `core/`
 - `Recipe`, `Modulation`, `ModelRef`, `Envelope`, `RecipeError` types
 - `Recipe::parse` (strict, deny_unknown_fields) and `Recipe::serialize`
 - 14 integration tests covering schema v1
 - One realistic recipe at `recipes/example-foggy-lofi.json`
-- GitHub repo `TaylorFinklea/lockstep` (public)
+- GitHub repo `TaylorFinklea/telaradio` (public)
 
 ## Blockers
 

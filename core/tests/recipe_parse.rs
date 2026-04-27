@@ -1,9 +1,9 @@
-//! Integration tests for `lockstep_core::Recipe` parsing and round-tripping.
+//! Integration tests for `telaradio_core::Recipe` parsing and round-tripping.
 //!
 //! These tests describe the public API contract of the recipe parser
 //! before any implementation exists. See `ARCHITECTURE.md` §Recipe format.
 
-use lockstep_core::{Envelope, Recipe, RecipeError};
+use telaradio_core::{Envelope, Recipe, RecipeError};
 
 const VALID_MINIMAL: &str = r#"{
   "schema_version": "1",

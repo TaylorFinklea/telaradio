@@ -18,7 +18,7 @@ labels: bug
 
 ## Environment
 
-- Lockstep version (or commit):
+- Telaradio version (or commit):
 - Platform: macOS / iOS / web / other
 - OS version:
 - Hardware (Apple Silicon / Intel / etc.):

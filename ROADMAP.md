@@ -1,4 +1,4 @@
-# Lockstep — Roadmap
+# Telaradio — Roadmap
 
 Phases are not date-bound. Each phase ends with a `PHASE_N_REPORT.md` at the
 project root capturing what shipped, what slipped, and what was learned.
@@ -17,7 +17,7 @@ it sound good enough to use during a real work session.
 - [x] Recipe parser + schema validator
 - [ ] `Generator` trait + ACE-Step Python subprocess adapter
 - [ ] First-launch model download (resumable HTTP, HF Hub, into
-      `~/Library/Application Support/Lockstep/models/`); also support
+      `~/Library/Application Support/Telaradio/models/`); also support
       pointing at a pre-existing weights file
 - [ ] Rust AM modulation DSP per Woods et al. §Methods (square envelope,
       configurable rate + depth, default 16 Hz / 0.5)
@@ -60,7 +60,7 @@ graph gains the nature layer.
 
 ## Phase 3 — Adaptive listening
 
-Goal: Lockstep responds to the listener's state, not just the recipe.
+Goal: Telaradio responds to the listener's state, not just the recipe.
 
 - [ ] Apple Watch heart-rate adaptation (Endel-style: gently nudge
       generation parameters as HR changes)

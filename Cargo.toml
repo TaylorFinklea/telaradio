@@ -6,7 +6,7 @@ members = ["core"]
 version = "0.0.1"
 edition = "2024"
 license = "AGPL-3.0-or-later"
-repository = "https://github.com/TaylorFinklea/lockstep"
+repository = "https://github.com/TaylorFinklea/telaradio"
 authors = ["Taylor Finklea <taylor.finklea@gmail.com>"]
 rust-version = "1.85"
 

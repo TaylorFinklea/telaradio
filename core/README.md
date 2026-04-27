@@ -1,6 +1,6 @@
 # core/
 
-Rust workspace member crate (`lockstep-core`). Cross-cutting types and
+Rust workspace member crate (`telaradio-core`). Cross-cutting types and
 traits used by every other crate.
 
 ## Implemented (Phase 1a)

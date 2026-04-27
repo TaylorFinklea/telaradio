@@ -1,8 +1,8 @@
-# Lockstep — Project Continuity Doc
+# Telaradio — Project Continuity Doc
 
-> If you just opened this repo and have one minute: skim **What Lockstep is** and **First 30 seconds** below, then read `ARCHITECTURE.md` (recipe format + module boundaries) and `ROADMAP.md` (Phase 1).
+> If you just opened this repo and have one minute: skim **What Telaradio is** and **First 30 seconds** below, then read `ARCHITECTURE.md` (recipe format + module boundaries) and `ROADMAP.md` (Phase 1).
 
-## What Lockstep is
+## What Telaradio is
 
 An open-source focus music system implementing the amplitude-modulation
 mechanism described in Woods et al. 2024 (*Communications Biology* 7:1376,
@@ -30,7 +30,7 @@ recipe rather than on copyrighted audio.
 - **No medical or productivity claims.** Cite the paper, describe the
   mechanism, let users evaluate efficacy themselves. The bypass toggle in the
   advanced UI is a built-in placebo control for personal A/B testing.
-- **No telemetry, no phone-home.** Lockstep does not call out except for
+- **No telemetry, no phone-home.** Telaradio does not call out except for
   first-launch model download and (Phase 2+) GitHub library sync.
 
 ## Tech stack at a glance
@@ -43,7 +43,7 @@ recipe rather than on copyrighted audio.
 | Web client | SvelteKit (Phase 2; library browsing, contribution UX) |
 | Native client | Swift / SwiftUI on macOS (Phase 1) and iOS (Phase 2) |
 | Recipe storage | Local filesystem + GitHub sync (recipes-as-PR) |
-| Model storage | `~/Library/Application Support/Lockstep/models/` |
+| Model storage | `~/Library/Application Support/Telaradio/models/` |
 
 ## Key files & their roles
 

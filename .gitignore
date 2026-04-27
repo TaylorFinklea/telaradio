@@ -20,6 +20,6 @@ Cargo.lock.bak
 .env.local
 .envrc
 
-# Lockstep runtime data (never commit user libraries or models)
+# Telaradio runtime data (never commit user libraries or models)
 /models/
 /local-recipes/

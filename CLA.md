@@ -1,6 +1,6 @@
 # Contributor License Agreement (stub)
 
-Lockstep is licensed under AGPL-3.0. To preserve the option of
+Telaradio is licensed under AGPL-3.0. To preserve the option of
 relicensing or dual-licensing the project in the future, contributors will
 be asked to sign a Contributor License Agreement before their changes are
 merged.

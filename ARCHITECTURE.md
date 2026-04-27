@@ -1,4 +1,4 @@
-# Lockstep — Architecture
+# Telaradio — Architecture
 
 This document specifies the system's structure. Decisions captured here are
 load-bearing; changes should land alongside an entry in `.docs/ai/decisions.md`
@@ -167,7 +167,7 @@ recipe.json
 └─────────────┘    └──────────────┘    └────────────┘    └──────────┘
                           ▲
                      model cache
-                ~/.../Lockstep/models/
+                ~/.../Telaradio/models/
 
 [Future Phase 2 graph]
 
@@ -187,7 +187,7 @@ recipe.json
 
 ## Privacy and telemetry
 
-Lockstep does not phone home.
+Telaradio does not phone home.
 
 - First-launch model download is the only mandatory outbound call (HF Hub).
   A "use existing model file" path is offered for fully air-gapped installs.

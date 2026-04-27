@@ -6,11 +6,14 @@ directory scaffold written; no implementation code.
 
 ## Decisions made
 
-### 1. Codename: Lockstep
+### 1. Codename: Telaradio
 
-Direct reference to neural phase-locking — the mechanism in plain English.
-Distinctive (compare "Cadence", which collides heavily in fintech / dev-tool
-naming), single word, trademark-clean.
+Distinctive coined name (telaradio.com domain secured), single word,
+trademark-clean. Avoids generic music-term collision in tooling/fintech
+naming. The project was briefly codenamed **Lockstep** during the
+2026-04-26 session (a reference to neural phase-locking) and renamed
+to **Telaradio** on 2026-04-27; see `.docs/ai/decisions.md` for the
+rename entry.
 
 ### 2. Platform strategy v1: Hybrid
 
@@ -30,7 +33,7 @@ mattering more than implementation cost for this product.
 
 ### 3. Recipe storage and distribution v1: Local + GitHub sync
 
-Recipes live at `~/Library/Application Support/Lockstep/recipes/` (and
+Recipes live at `~/Library/Application Support/Telaradio/recipes/` (and
 platform equivalents). Canonical community library is a public GitHub repo;
 contributions are PRs; git history is the audit trail.
 
@@ -78,7 +81,7 @@ the start. The architecture is ready for the layer.
 ### 7. ACE-Step model distribution: First-launch download
 
 Backend installer ~50 MB; first run prompts user to download ACE-Step 1.5
-XL (~5 GB) from Hugging Face into `~/Library/Application Support/Lockstep/
+XL (~5 GB) from Hugging Face into `~/Library/Application Support/Telaradio/
 models/`. Resumable HTTP. After first run, fully offline. Architecture
 supports model variant selection even though v1 ships XL only.
 

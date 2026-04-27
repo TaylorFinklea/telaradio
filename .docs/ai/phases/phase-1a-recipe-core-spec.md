@@ -55,7 +55,7 @@ or any other moving part.
 ### Open questions (resolved 2026-04-27)
 
 1. **GitHub hosting** — *Create now (public).* Repo will be
-   `tfinklea/lockstep`. First push happens at end of this phase.
+   `tfinklea/telaradio`. First push happens at end of this phase.
 2. **UUID handling** — *Strict `Uuid` via the `uuid` crate.* Malformed
    IDs fail at parse time.
 3. **Cargo workspace layout** — *Single root workspace.* Each module is

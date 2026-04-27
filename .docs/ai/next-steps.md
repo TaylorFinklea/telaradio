@@ -6,7 +6,7 @@ slice is **Phase 1b — ACE-Step adapter + first-launch model download**.
 
 ## Phase 1b — Model adapter (next session)
 
-1. Define the `Generator` trait in `lockstep-core` (signature is in
+1. Define the `Generator` trait in `telaradio-core` (signature is in
    `ARCHITECTURE.md` §Model abstraction interface).
 2. Bootstrap the `model-adapter/` workspace member crate.
 3. Decide IPC format with the Python subprocess (newline-delimited JSON
@@ -15,7 +15,7 @@ slice is **Phase 1b — ACE-Step adapter + first-launch model download**.
    inline, or shared-memory buffer). Affects round-trip latency.
 5. Implement `AceStepGenerator { id, version, generate(...) }`.
 6. First-launch model download: resumable HTTP from Hugging Face into
-   `~/Library/Application Support/Lockstep/models/`. Also support
+   `~/Library/Application Support/Telaradio/models/`. Also support
    pointing at a pre-existing weights path.
 7. Integration test that downloads (or finds) the model, generates a
    short clip, and writes it to a temp file. Mark `#[ignore]` since it

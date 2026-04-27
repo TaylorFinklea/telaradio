@@ -8,7 +8,7 @@
 
 - `Cargo.toml` (new) — workspace root; `[workspace.dependencies]` pins
   serde, serde_json, thiserror, chrono, uuid; pedantic clippy lints
-- `core/Cargo.toml` (new) — `lockstep-core` package, deps from workspace
+- `core/Cargo.toml` (new) — `telaradio-core` package, deps from workspace
 - `core/src/lib.rs` (new) — re-exports `Recipe`, `Envelope`, `ModelRef`,
   `Modulation`, `RecipeError`
 - `core/src/error.rs` (new) — `RecipeError` enum (Json, UnsupportedSchemaVersion,
@@ -30,7 +30,7 @@
 ## Decisions made
 
 See `decisions.md` 2026-04-27 entry. Summary: GitHub repo public as
-`TaylorFinklea/lockstep`; strict `uuid::Uuid`; single root workspace;
+`TaylorFinklea/telaradio`; strict `uuid::Uuid`; single root workspace;
 strict schema parsing. Plus a few mid-build judgment calls (inline test
 JSON over fixture files; serde-then-semantic validation order; edition
 2024 / rust-version 1.85).
@@ -43,7 +43,7 @@ running 14 tests
 test result: ok. 14 passed; 0 failed; 0 ignored
 
 $ cargo clippy --all-targets -- -D warnings
-Checking lockstep-core v0.0.1
+Checking telaradio-core v0.0.1
 Finished `dev` profile [unoptimized + debuginfo]
 
 $ cargo fmt --check
@@ -67,14 +67,14 @@ $ cargo fmt --check
 - [ ] Once `Generator` trait lives in `core::audio`, revisit whether
       `Recipe.duration_seconds` should also be enforced against a
       maximum (today 0 is rejected; 99,999 is accepted)
-- [ ] Eventually: a CLI smoke binary (`cargo run -p lockstep-core
+- [ ] Eventually: a CLI smoke binary (`cargo run -p telaradio-core
       --bin recipe-validate -- path/to/recipe.json`) to make manual
       validation cheap. Skipped this phase to keep scope tight.
 
 ## Context for next phase
 
 - TDD discipline held: fixtures + 14 failing tests written first; cargo
-  test compiled with `unresolved import lockstep_core` as the expected
+  test compiled with `unresolved import telaradio_core` as the expected
   RED, then minimal implementation made all 14 green on the first run.
 - `core/Cargo.toml` is set up to inherit workspace deps cleanly. New
   member crates can pattern-match on it.

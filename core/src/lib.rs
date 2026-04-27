@@ -1,4 +1,4 @@
-//! Lockstep core: recipe types, schema v1 parser, and error types.
+//! Telaradio core: recipe types, schema v1 parser, and error types.
 //!
 //! See `ARCHITECTURE.md` at the repo root for the canonical schema.
 

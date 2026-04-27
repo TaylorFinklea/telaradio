@@ -19,4 +19,4 @@ generators (MusicGen, YuE, ...) live alongside it, and recipes pin
 `model.id + model.version` to lock down which one runs.
 
 First-launch model download (resumable HTTP from Hugging Face into
-`~/Library/Application Support/Lockstep/models/`) lives here too.
+`~/Library/Application Support/Telaradio/models/`) lives here too.
