@@ -13,8 +13,18 @@ traits used by every other crate.
 - `Recipe::serialize() -> Result<String, RecipeError>` — pretty JSON
 - `error::RecipeError` — typed error variants for every rejection case
 
-14 integration tests cover accept/reject/round-trip across every
-acceptance criterion. Run from project root:
+## Implemented (Phase 1b)
+
+- `audio::WavBuffer { sample_rate, channels, samples }` — interleaved
+  PCM buffer with `duration_seconds()` derivation
+- `audio::DEFAULT_SAMPLE_RATE_HZ` (44_100) and `audio::DEFAULT_CHANNELS`
+  (2) — the conventions every Generator should target
+- `generator::Generator` — synchronous trait `(id, version,
+  generate(prompt, seed, duration_seconds) -> WavBuffer)`. Object-safe.
+- `generator::GeneratorError` — typed variants: Io, Subprocess, Wav,
+  ProtocolMismatch
+
+Run quality gates from project root:
 
 ```bash
 cargo test
@@ -22,11 +32,9 @@ cargo clippy --all-targets -- -D warnings
 cargo fmt --check
 ```
 
-## Planned (later Phase 1 sub-slices)
+## Planned
 
-- `audio::WavBuffer` — sample-rate conventions, mono/stereo (Phase 1c
-  alongside the DSP crate)
-- `Generator` trait — model adapter contract (Phase 1b)
+- `dsp/` — amplitude modulation per Woods et al. 2024 (Phase 1c)
+- ACE-Step generator implementation alongside the mock (Phase 1b2)
 
-The `dsp/`, `model-adapter/`, and `library/` crates will depend on this
-one.
+The `model-adapter/`, `dsp/`, and `library/` crates depend on this one.

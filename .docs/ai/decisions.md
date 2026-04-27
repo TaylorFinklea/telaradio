@@ -53,6 +53,50 @@ Mid-build judgment calls (logged here rather than re-asking):
   `rust-version = "1.85"`, since the toolchain installed locally is
   rustc 1.95.
 
+## 2026-04-27 — Phase 1b: Generator trait + mock subprocess
+
+1. **Phase 1b split from 1b2.** Phase 1b lands the `Generator` trait,
+   IPC contract, and a mock-engine subprocess that returns a 440 Hz
+   sine. Phase 1b2 swaps the mock for real ACE-Step inference + HF
+   model download. Reason: with the mock, downstream phases (DSP,
+   Swift app, buffer queue) can be built without depending on a 5 GB
+   model or GPU. Faster feedback loops, cleaner test isolation.
+2. **`Generator` trait is synchronous.** Backend HTTP/gRPC layer in
+   Phase 2 will wrap it async. Keeping it sync means `core` stays
+   runtime-free.
+3. **IPC: NDJSON over stdio + temp WAV file**. Debuggable, no extra
+   deps; ACE-Step's ~10s latency dwarfs IPC cost.
+4. **One subprocess per `SubprocessGenerator` instance**. Held open
+   across `generate` calls; killed + reaped on `Drop`. The Python
+   spawn cost (~200 ms) is paid once.
+5. **Audio defaults: 44.1 kHz, stereo, 16-bit signed PCM**. Constants
+   live at `core::audio::DEFAULT_SAMPLE_RATE_HZ` (44_100) and
+   `core::audio::DEFAULT_CHANNELS` (2). Generators target these unless
+   they document otherwise.
+6. **Mock generator id/version: `"mock-sine"` / `"0.1.0"`**. Stable
+   identifiers so a recipe authored against the mock points at it
+   forever; ACE-Step takes a different `id`.
+7. **`#[serde(tag = "kind", rename_all = "lowercase")]` on Response**.
+   Wire format: `{"kind":"ok",...}` and `{"kind":"err","message":...}`.
+   Tested explicitly in `protocol_serde.rs`.
+
+Mid-build judgment calls (logged here, not re-asked):
+
+- **Single `Mutex<IoState>` over the subprocess's child + stdin +
+  stdout**. `Generator::generate` takes `&self`, so concurrent calls
+  serialize naturally on the lock — which matches the subprocess's
+  request-response semantics anyway.
+- **Best-effort temp WAV cleanup**. Adapter calls `fs::remove_file`
+  but ignores errors. If cleanup matters more later, switch to an
+  RAII wrapper; for Phase 1b it's noise.
+- **Edition 2024 reserved keyword `gen`**. Test variables renamed to
+  `generator` to avoid the reserved keyword.
+- **Clippy `unnecessary_literal_bound` allowed in tests only**. Real
+  `Generator` impls return `&'static str` and clippy is happy; the
+  in-memory test impl is annotated locally rather than changing the
+  trait signature to `-> &'static str`, which would constrain future
+  impls that might want non-static identity.
+
 ## 2026-04-27 — Project rename: Lockstep → Telaradio
 
 The project was codenamed **Lockstep** during the 2026-04-26 session

@@ -1,41 +1,53 @@
 # Next steps
 
-Phase 1 checklist lives in [`../../ROADMAP.md`](../../ROADMAP.md). Items
-1–2 (Cargo bootstrap, recipe parser + validator) are complete. The next
-slice is **Phase 1b — ACE-Step adapter + first-launch model download**.
+Phase 1 checklist lives in [`../../ROADMAP.md`](../../ROADMAP.md). Phase
+1a (recipe core) and Phase 1b (Generator trait + mock subprocess) are
+complete. The next decision point: **Phase 1b2 (real ACE-Step) or Phase 1c
+(AM modulation DSP) first?** Both can proceed independently because the
+mock generator unblocks downstream work.
 
-## Phase 1b — Model adapter (next session)
+## Recommended: Phase 1c — AM modulation DSP (next session)
 
-1. Define the `Generator` trait in `telaradio-core` (signature is in
-   `ARCHITECTURE.md` §Model abstraction interface).
-2. Bootstrap the `model-adapter/` workspace member crate.
-3. Decide IPC format with the Python subprocess (newline-delimited JSON
-   over stdio is the leading candidate; confirm before building).
-4. Decide audio interchange format (raw PCM in a temp file, base64'd
-   inline, or shared-memory buffer). Affects round-trip latency.
-5. Implement `AceStepGenerator { id, version, generate(...) }`.
-6. First-launch model download: resumable HTTP from Hugging Face into
-   `~/Library/Application Support/Telaradio/models/`. Also support
-   pointing at a pre-existing weights path.
-7. Integration test that downloads (or finds) the model, generates a
-   short clip, and writes it to a temp file. Mark `#[ignore]` since it
-   needs network + GPU.
+The DSP can be built and ear-validated against the mock's 440 Hz sine
+without needing the real model. Faster iteration loop than Phase 1b2.
 
-## After Phase 1b
+1. Bootstrap the `dsp/` workspace member crate.
+2. (TDD) Define `AmEnvelope` (Square / Sine / Triangle) and the AM
+   transform `apply_am(buffer, rate_hz, depth, envelope) -> WavBuffer`
+   per Woods et al. 2024 §Methods. Pure function; no allocation beyond
+   the output buffer.
+3. (TDD) Tests: at depth=0.0 the buffer is unchanged; at depth=1.0 +
+   square envelope, 50% of samples are zero; rate-locked phase test.
+4. CLI smoke binary `apply-modulation` that takes a recipe + WAV path
+   and writes a modulated WAV. Useful for ear-validation.
+5. Wire DSP into the model-adapter pipeline so a generated buffer can
+   be modulated end-to-end.
 
-- Phase 1c — Rust AM modulation DSP (depends on `WavBuffer` shape in core)
+## Alternative: Phase 1b2 — real ACE-Step (when ready)
+
+1. Decide Python venv strategy: a `uv`-managed project under
+   `model-adapter/python/` (current ad-hoc `uv run --with` becomes a
+   real `pyproject.toml` with ACE-Step deps).
+2. First-launch HF model download (resumable HTTP) into
+   `~/Library/Application Support/Telaradio/models/`. Add an "use
+   existing weights file" path for air-gapped installs.
+3. New `AceStepGenerator` impl alongside `SubprocessGenerator` (or
+   parameterize the engine inside the existing subprocess via a
+   request field).
+4. Mark e2e tests `#[ignore]` for the ACE-Step integration since they
+   need ~10s and ~5 GB on disk.
+
+## After 1c / 1b2
+
 - Phase 1d — macOS Swift app shell
 - Phase 1e — Background buffer queue
 - Phase 1f — Hand-seed ~20 starter recipes
-- Phase 1g — Settings UI (preset / intensity / advanced)
+- Phase 1g — Settings UI (preset / 3-tier intensity / advanced)
 
-## Decisions to make at the start of Phase 1b
+## Decisions to make at the start of Phase 1c
 
-- IPC format with Python (newline-delimited JSON vs. msgpack vs. gRPC)
-- Audio interchange (temp file vs. inline base64 vs. shared memory)
-- Audio sample rate (44.1 kHz is most likely; 48 kHz is a real
-  alternative if AVFoundation prefers it)
-- Mono vs. stereo for v1 (mono is simpler; stereo is what users expect)
-- `Generator` trait async or sync? Async fits HTTP/gRPC server; sync is
-  simpler for the subprocess. Probably both: blocking impl + an async
-  wrapper in the backend.
+- AM math precision: f32 (matches `WavBuffer.samples`) or f64 internally?
+- Should the DSP own a separate `ModulationEnvelope` enum, or reuse
+  `Recipe.modulation.envelope` directly? (Currently the recipe envelope
+  is in `core::recipe::Envelope` and the DSP needs its own anyway since
+  it'll grow rate-modulation patterns over time.)

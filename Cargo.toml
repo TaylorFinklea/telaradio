@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["core"]
+members = ["core", "model-adapter"]
 
 [workspace.package]
 version = "0.0.1"
@@ -16,6 +16,9 @@ serde_json = "1"
 thiserror = "2"
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1", features = ["v4", "serde"] }
+hound = "3"
+tempfile = "3"
+telaradio-core = { path = "core" }
 
 [workspace.lints.clippy]
 pedantic = { level = "warn", priority = -1 }

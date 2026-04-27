@@ -15,6 +15,12 @@ Cargo.lock.bak
 *.swo
 *~
 
+# Python
+**/.venv/
+**/__pycache__/
+**/*.pyc
+**/uv.lock
+
 # Environment / local config
 .env
 .env.local

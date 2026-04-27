@@ -1,0 +1,30 @@
+[project]
+name = "telaradio-subprocess"
+version = "0.0.1"
+description = "Telaradio Python subprocess (Phase 1b mock; Phase 1b2 real ACE-Step)."
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "COM812", # conflicts with ruff formatter
+    "ISC001", # conflicts with ruff formatter
+    "D203",   # one-blank-line-before-class (conflicts with D211)
+    "D213",   # multi-line-summary-second-line (conflicts with D212)
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Single-script project; no need for per-module __init__ requirements.
+"telaradio_subprocess.py" = [
+    "INP001", # implicit-namespace-package: this is intentional, not a package
+]
+
+[tool.ty.environment]
+python-version = "3.11"
+
+[tool.ty.terminal]
+error-on-warning = true
