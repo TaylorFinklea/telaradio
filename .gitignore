@@ -1,0 +1,25 @@
+# Rust
+/target
+**/target
+Cargo.lock.bak
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editors / IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment / local config
+.env
+.env.local
+.envrc
+
+# Lockstep runtime data (never commit user libraries or models)
+/models/
+/local-recipes/
