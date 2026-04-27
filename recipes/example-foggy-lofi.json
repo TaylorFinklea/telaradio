@@ -1,0 +1,20 @@
+{
+  "schema_version": "1",
+  "id": "5b4f2a8c-9e3d-4f17-b2a1-7c0c1f3e8d92",
+  "title": "Foggy lofi for deep work",
+  "tags": ["lofi", "focus", "morning"],
+  "prompt": "warm vinyl lofi, jazzy keys, slow tempo, no vocals, hazy fog of reverb, late-night warmth",
+  "seed": 1893421,
+  "model": {
+    "id": "ace-step-1.5-xl",
+    "version": "1.5.0"
+  },
+  "duration_seconds": 240,
+  "modulation": {
+    "rate_hz": 16.0,
+    "depth": 0.5,
+    "envelope": "square"
+  },
+  "created_at": "2026-04-27T15:00:00Z",
+  "author": "TaylorFinklea"
+}

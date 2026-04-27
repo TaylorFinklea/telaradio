@@ -1,32 +1,41 @@
 # Next steps
 
-The Phase 1 checklist lives in [`../../ROADMAP.md`](../../ROADMAP.md). The
-items below are sequenced for a fresh Phase 1 session.
+Phase 1 checklist lives in [`../../ROADMAP.md`](../../ROADMAP.md). Items
+1–2 (Cargo bootstrap, recipe parser + validator) are complete. The next
+slice is **Phase 1b — ACE-Step adapter + first-launch model download**.
 
-## Immediate (next session)
+## Phase 1b — Model adapter (next session)
 
-1. Initialize git in `/Users/tfinklea/git/musicapp/` and make the first
-   commit (the Phase 0 scaffold).
-2. Decide whether to host on GitHub yet (likely yes — the canonical library
-   repo design depends on it).
-3. Bootstrap the Cargo workspace under `core/` with a minimal recipe types
-   crate matching `ARCHITECTURE.md` §Recipe format schema v1.
-4. Write the recipe parser + schema validator (TDD: write test recipes
-   first, then the parser).
+1. Define the `Generator` trait in `lockstep-core` (signature is in
+   `ARCHITECTURE.md` §Model abstraction interface).
+2. Bootstrap the `model-adapter/` workspace member crate.
+3. Decide IPC format with the Python subprocess (newline-delimited JSON
+   over stdio is the leading candidate; confirm before building).
+4. Decide audio interchange format (raw PCM in a temp file, base64'd
+   inline, or shared-memory buffer). Affects round-trip latency.
+5. Implement `AceStepGenerator { id, version, generate(...) }`.
+6. First-launch model download: resumable HTTP from Hugging Face into
+   `~/Library/Application Support/Lockstep/models/`. Also support
+   pointing at a pre-existing weights path.
+7. Integration test that downloads (or finds) the model, generates a
+   short clip, and writes it to a temp file. Mark `#[ignore]` since it
+   needs network + GPU.
 
-## After that
+## After Phase 1b
 
-5. ACE-Step Python subprocess wrapper (`model-adapter/`).
-6. Resumable HF model download.
-7. Rust AM modulation DSP (`dsp/`).
-8. Native macOS Swift app shell (`apple/`).
-9. Background buffer queue.
-10. Hand-seed ~20 starter recipes.
+- Phase 1c — Rust AM modulation DSP (depends on `WavBuffer` shape in core)
+- Phase 1d — macOS Swift app shell
+- Phase 1e — Background buffer queue
+- Phase 1f — Hand-seed ~20 starter recipes
+- Phase 1g — Settings UI (preset / intensity / advanced)
 
-## Decisions to make in Phase 1 first commit
+## Decisions to make at the start of Phase 1b
 
-- Audio sample rate convention (44.1 kHz seems likely)
+- IPC format with Python (newline-delimited JSON vs. msgpack vs. gRPC)
+- Audio interchange (temp file vs. inline base64 vs. shared memory)
+- Audio sample rate (44.1 kHz is most likely; 48 kHz is a real
+  alternative if AVFoundation prefers it)
 - Mono vs. stereo for v1 (mono is simpler; stereo is what users expect)
-- IPC format with the Python subprocess (newline-delimited JSON over stdio
-  is the leading candidate)
-- Cargo workspace layout (single workspace vs. multiple)
+- `Generator` trait async or sync? Async fits HTTP/gRPC server; sync is
+  simpler for the subprocess. Probably both: blocking impl + an async
+  wrapper in the backend.

@@ -12,9 +12,9 @@ Done. See `PHASE_0_REPORT.md`.
 Goal: a single user (Taylor) can play a recipe end-to-end on macOS and have
 it sound good enough to use during a real work session.
 
-- [ ] Rust workspace bootstrap under `core/` (Cargo.toml, error types,
+- [x] Rust workspace bootstrap under `core/` (Cargo.toml, error types,
       recipe types matching `ARCHITECTURE.md` schema v1)
-- [ ] Recipe parser + schema validator
+- [x] Recipe parser + schema validator
 - [ ] `Generator` trait + ACE-Step Python subprocess adapter
 - [ ] First-launch model download (resumable HTTP, HF Hub, into
       `~/Library/Application Support/Lockstep/models/`); also support
