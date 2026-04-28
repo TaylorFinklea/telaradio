@@ -1,8 +1,28 @@
 [project]
 name = "telaradio-subprocess"
 version = "0.0.1"
-description = "Telaradio Python subprocess (Phase 1b mock; Phase 1b2 real ACE-Step)."
-requires-python = ">=3.11"
+description = "Telaradio Python subprocess (Phase 1b mock + Phase 1b2 real ACE-Step)."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    # ACE-Step inference engine. Pulls torch, transformers, diffusers, etc.
+    # Resolution is heavy on first sync (multi-GB venv). The package's
+    # canonical Python module is `acestep` (the PyPI distribution name is
+    # `ace-step` with a hyphen).
+    #
+    # The PyPI sdist for ace-step==0.1.0 is broken — its setup.py reads
+    # requirements.txt at install time but the sdist tarball does not include
+    # that file (FileNotFoundError during `pip install ace-step`). Until
+    # upstream re-publishes, install from the GitHub repo instead. The
+    # commit pin matches main as of 2026-02-15.
+    "ace-step",
+    # Used directly by the model_install module to fetch ACE-Step weights
+    # from the Hugging Face Hub. ace-step itself depends on this transitively
+    # but we list it explicitly because we import it from telaradio code.
+    "huggingface-hub>=0.20",
+]
+
+[dependency-groups]
+dev = ["ruff>=0.5", "ty>=0.0.1a1"]
 
 [tool.ruff]
 line-length = 100
@@ -22,9 +42,17 @@ ignore = [
 "telaradio_subprocess.py" = [
     "INP001", # implicit-namespace-package: this is intentional, not a package
 ]
+"telaradio_ace_step.py" = [
+    "INP001", # implicit-namespace-package: this is intentional, not a package
+]
 
 [tool.ty.environment]
 python-version = "3.11"
 
 [tool.ty.terminal]
 error-on-warning = true
+
+[tool.uv.sources]
+# See note in [project.dependencies]: PyPI sdist of ace-step is broken at
+# install time. Pin to the commit that matches the published 0.1.0 release.
+ace-step = { git = "https://github.com/ace-step/ACE-Step.git", rev = "1bee4c9f5b43e30995f8d4d33b3919197ce1bd68" }

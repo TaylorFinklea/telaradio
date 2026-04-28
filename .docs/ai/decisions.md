@@ -97,6 +97,48 @@ Mid-build judgment calls (logged here, not re-asked):
   trait signature to `-> &'static str`, which would constrain future
   impls that might want non-static identity.
 
+## 2026-04-28 — Phase 1b2: real ACE-Step + HF download
+
+1. **Two trait impls, not one parameterized subprocess.**
+   `AceStepGenerator` lives next to `SubprocessGenerator`, with the
+   only varying axes being the script path / Python interpreter /
+   id / version. Shared NDJSON plumbing lives in a private
+   `ipc::IpcChannel`. Cleaner than a runtime engine flag and keeps
+   the distinct ids honest in the recipe schema.
+2. **`ACE_STEP_GENERATOR_ID = "ace-step-1.5-xl"`** despite the actual
+   HF checkpoint being `ACE-Step/ACE-Step-v1-3.5B`. The id is meant to
+   be stable for recipes; we kept the spec's name to avoid a churn on
+   day one. Whether the id should track the actual checkpoint name is
+   a Phase 1d / 1e question. Logged as a follow-up.
+3. **Resumable HTTP is pure Rust (`reqwest` + `rustls-tls`),
+   blocking.** Async would have forced a tokio runtime onto the
+   sync `Generator` trait. Rules out openssl on the dep surface.
+4. **Manifest is a single `manifest.json` of `[ModelArtifact]`.** Each
+   artifact carries `url`, `relative_path`, `sha256`. `ensure_model`
+   re-validates every artifact on every call; idempotency comes from
+   the validation passing.
+5. **`UseExisting` copies, doesn't symlink.** Avoids surprises if the
+   source disappears later; ~5 GB extra disk is acceptable.
+6. **`prompt_install_mode_cli` is reader/writer-generic.** Tested
+   against `&[u8]`/`Vec<u8>` rather than `stdin`/`stderr`. Real
+   callers pass the std streams.
+7. **`#[ignore]` on the real-model e2e.** Requires ~5 GB checkpoint
+   + a primed venv; opt in with `TELARADIO_MODEL_DIR=...
+   --include-ignored`. Mocked smoke tests cover the Rust IPC contract
+   so CI stays meaningful.
+8. **Lazy pipeline load in `telaradio_ace_step.py`.** Subprocess
+   starts cheap (no torch import on `--probe`); first request triggers
+   the model load. Lets the Rust caller spawn the subprocess
+   speculatively.
+9. **`ace-step` installed from a GitHub commit pin.** Upstream's PyPI
+   sdist is broken (`setup.py` reads `requirements.txt` but the file
+   isn't in the tarball — `FileNotFoundError`). Workaround:
+   `[tool.uv.sources] ace-step = { git = "...", rev = "1bee4c9f..." }`.
+   Switch back to a plain PyPI version when upstream re-publishes.
+10. **Stop gitignoring `**/uv.lock`.** Reproducible installs require
+    the lockfile in the repo. Phase 1b's gitignore was conservative;
+    Phase 1b2 reverses it now that we have a real uv project.
+
 ## 2026-04-27 — Project rename: Lockstep → Telaradio
 
 The project was codenamed **Lockstep** during the 2026-04-26 session

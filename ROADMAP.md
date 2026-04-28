@@ -15,11 +15,11 @@ it sound good enough to use during a real work session.
 - [x] Rust workspace bootstrap under `core/` (Cargo.toml, error types,
       recipe types matching `ARCHITECTURE.md` schema v1)
 - [x] Recipe parser + schema validator
-- [~] `Generator` trait + Python subprocess adapter
-      (Phase 1b done with mock-sine engine; Phase 1b2 will swap in real ACE-Step)
-- [ ] First-launch model download (resumable HTTP, HF Hub, into
+- [x] `Generator` trait + Python subprocess adapter
+      (Phase 1b: mock-sine engine; Phase 1b2: real ACE-Step)
+- [x] First-launch model download (resumable HTTP, HF Hub, into
       `~/Library/Application Support/Telaradio/models/`); also support
-      pointing at a pre-existing weights file
+      pointing at a pre-existing weights file (Phase 1b2)
 - [x] Rust AM modulation DSP per Woods et al. §Methods (square envelope,
       configurable rate + depth, default 16 Hz / 0.5)
 - [ ] Native macOS Swift app: minimal player UI (load recipe, play, pause,
