@@ -26,7 +26,7 @@ labels: recipe-proposal
   "tags": [],
   "prompt": "...",
   "seed": 0,
-  "model": { "id": "ace-step-1.5-xl", "version": "1.5.0" },
+  "model": { "id": "ace-step-v1-3.5b", "version": "1.0.0" },
   "duration_seconds": 240,
   "modulation": { "rate_hz": 16, "depth": 0.5, "envelope": "square" },
   "created_at": "...",

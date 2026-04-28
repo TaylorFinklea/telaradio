@@ -11,7 +11,7 @@ use crate::audio::WavBuffer;
 /// Synchronous generator contract. Async wrapping is the backend's job
 /// (Phase 2+); keeping the trait sync means `core` stays runtime-free.
 pub trait Generator {
-    /// Stable identifier (e.g. `"ace-step-1.5-xl"`, `"mock-sine"`).
+    /// Stable identifier (e.g. `"ace-step-v1-3.5b"`, `"mock-sine"`).
     fn id(&self) -> &str;
 
     /// Semantic version of this generator implementation.

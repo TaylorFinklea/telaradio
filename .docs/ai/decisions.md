@@ -108,8 +108,8 @@ Mid-build judgment calls (logged here, not re-asked):
 2. **`ACE_STEP_GENERATOR_ID = "ace-step-1.5-xl"`** despite the actual
    HF checkpoint being `ACE-Step/ACE-Step-v1-3.5B`. The id is meant to
    be stable for recipes; we kept the spec's name to avoid a churn on
-   day one. Whether the id should track the actual checkpoint name is
-   a Phase 1d / 1e question. Logged as a follow-up.
+   day one. Resolved at merge time by a rename — see the 2026-04-28
+   "model id rename" entry below.
 3. **Resumable HTTP is pure Rust (`reqwest` + `rustls-tls`),
    blocking.** Async would have forced a tokio runtime onto the
    sync `Generator` trait. Rules out openssl on the dep surface.
@@ -204,3 +204,28 @@ Mid-build judgment calls (logged here, not re-asked):
 - **Test-module-level `#![allow]` for clippy casts**, not a
   per-function allow. Audio-math tests have casts every few lines;
   per-test allows would be noisier than the lints they suppress.
+
+## 2026-04-28 — Model id rename: `ace-step-1.5-xl` → `ace-step-v1-3.5b`
+
+The Phase 1b2 agent flagged that the recipe-pinning constant
+`ACE_STEP_GENERATOR_ID = "ace-step-1.5-xl"` and recipe `model.version =
+"1.5.0"` did not match the actual Hugging Face checkpoint name
+`ACE-Step/ACE-Step-v1-3.5B`. The "1.5 XL" label came from the original
+session 0 prompt and was either outdated or never accurate.
+
+**Resolved at merge time** (this session, 2026-04-28) by renaming
+across the codebase to match HF reality:
+
+- `ACE_STEP_GENERATOR_ID = "ace-step-v1-3.5b"` (lowercase, hyphenated,
+  tracks the HF model name).
+- `ACE_STEP_GENERATOR_VERSION = "1.0.0"` (Telaradio's first integration
+  of ACE-Step v1; bump on future behavior changes).
+- `recipes/example-foggy-lofi.json`, `core/tests/recipe_parse.rs`
+  fixture, `.github/ISSUE_TEMPLATE/recipe_proposal.md`, ARCHITECTURE.md
+  examples, CLAUDE.md prose, PHASE_0_REPORT.md section header all
+  updated to match.
+
+**Why this was safe to do at merge:** no recipes had been authored in
+the wild yet pinning the old id (the only example recipe is the one we
+also renamed). After the first community recipes ship, the id is
+effectively locked and a future rename would break their reproducibility.

@@ -35,8 +35,8 @@ smoke test. See
   compose a private `ipc::IpcChannel` so the NDJSON-over-stdio plumbing
   is shared. `AceStepGenerator::spawn(model_dir)` runs
   `model-adapter/python/telaradio_ace_step.py` from the project's uv
-  venv with `TELARADIO_MODEL_DIR` exported. Id: `"ace-step-1.5-xl"`,
-  version: `"1.5.0"`.
+  venv with `TELARADIO_MODEL_DIR` exported. Id: `"ace-step-v1-3.5b"`,
+  version: `"1.0.0"`.
 - `model_install::ensure_model(install_dir, artifacts, mode)` populates
   a canonical install dir from Hugging Face (`InstallMode::Download` —
   resumable HTTP via `hf_download`) or a user-supplied directory
@@ -56,16 +56,6 @@ smoke test. See
   ACE-Step round-trip is `#[ignore]`d.
 
 See [`phases/phase-1b2-ace-step-report.md`](phases/phase-1b2-ace-step-report.md).
-
-## Known follow-up: model id mismatch
-
-Phase 1b2 kept the constant `ACE_STEP_GENERATOR_ID = "ace-step-1.5-xl"`,
-matching the recipe schema's prior pin. The actual model on Hugging Face
-is `ACE-Step/ACE-Step-v1-3.5B`. The example recipe at
-`recipes/example-foggy-lofi.json` also pins `model.id =
-"ace-step-1.5-xl"`. Decide whether to (a) rename constants + example
-recipe to reflect reality, or (b) keep the alias and document it as a
-local stable identifier. Captured in next-steps.
 
 ## What exists
 

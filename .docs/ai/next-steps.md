@@ -57,15 +57,6 @@ Skip if you'd rather wait until Phase 1d's Swift app exercises it.
 
 ## Open follow-ups from Phase 1b2
 
-- **Model id mismatch.** The constant `ACE_STEP_GENERATOR_ID` is
-  `"ace-step-1.5-xl"` (matches the recipe schema's existing pin) but
-  the actual model on Hugging Face is
-  `ACE-Step/ACE-Step-v1-3.5B`. Decide whether the id should track the
-  parameter count, the marketing name, or stay opaque as an internal
-  alias. Recipes pinning the current id are the constraint — once
-  recipes are authored against an id, it is effectively locked.
-  `recipes/example-foggy-lofi.json` also pins `model.id =
-  "ace-step-1.5-xl"`.
 - **ACE-Step PyPI sdist is broken.** `setup.py` reads a
   `requirements.txt` not in the tarball. We pin a GitHub commit
   (`1bee4c9f`) instead via `[tool.uv.sources]`. Periodically check if

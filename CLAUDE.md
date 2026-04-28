@@ -22,7 +22,7 @@ recipe rather than on copyrighted audio.
   generated audio as the artifact. If you find yourself adding an audio
   storage layer, stop and check this doc.
 - **Model-agnostic generation.** A `Generator` trait in Rust abstracts the
-  model. ACE-Step 1.5 XL is the v1 implementation; MusicGen / YuE / future
+  model. ACE-Step v1 3.5B is the v1 implementation; MusicGen / YuE / future
   Apache-licensed models must be droppable behind the same interface.
 - **AGPL-3.0, with CLA.** The CLA preserves dual-licensing optionality.
 - **Solo curator in Phase 1.** No multi-user, voting, or community features
@@ -38,7 +38,7 @@ recipe rather than on copyrighted audio.
 | Layer | Tech |
 |-------|------|
 | Generation backend | Rust (HTTP/gRPC server) |
-| Model runtime | Python subprocess running ACE-Step 1.5 XL |
+| Model runtime | Python subprocess running ACE-Step v1 3.5B |
 | DSP | Rust (amplitude modulation, future audio graph) |
 | Web client | SvelteKit (Phase 2; library browsing, contribution UX) |
 | Native client | Swift / SwiftUI on macOS (Phase 1) and iOS (Phase 2) |

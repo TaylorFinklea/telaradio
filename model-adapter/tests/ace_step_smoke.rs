@@ -25,9 +25,9 @@ fn ace_step_generator_id_and_version_match_constants() {
     let generator =
         AceStepGenerator::spawn_with_script(&mock_script()).expect("spawn ace-step generator");
     assert_eq!(generator.id(), ACE_STEP_GENERATOR_ID);
-    assert_eq!(generator.id(), "ace-step-1.5-xl");
+    assert_eq!(generator.id(), "ace-step-v1-3.5b");
     assert_eq!(generator.version(), ACE_STEP_GENERATOR_VERSION);
-    assert_eq!(generator.version(), "1.5.0");
+    assert_eq!(generator.version(), "1.0.0");
 }
 
 #[test]

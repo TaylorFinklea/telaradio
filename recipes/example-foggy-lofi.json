@@ -6,8 +6,8 @@
   "prompt": "warm vinyl lofi, jazzy keys, slow tempo, no vocals, hazy fog of reverb, late-night warmth",
   "seed": 1893421,
   "model": {
-    "id": "ace-step-1.5-xl",
-    "version": "1.5.0"
+    "id": "ace-step-v1-3.5b",
+    "version": "1.0.0"
   },
   "duration_seconds": 240,
   "modulation": {

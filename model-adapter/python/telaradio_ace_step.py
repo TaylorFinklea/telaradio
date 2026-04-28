@@ -31,7 +31,7 @@ from typing import TYPE_CHECKING, Any, TypedDict
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-ACE_STEP_GENERATOR_VERSION = "1.5.0"
+ACE_STEP_GENERATOR_VERSION = "1.0.0"
 
 
 class RequestDict(TypedDict):

@@ -1,4 +1,4 @@
-//! `AceStepGenerator` — Phase 1b2 real ACE-Step 1.5 XL generator.
+//! `AceStepGenerator` — Phase 1b2 real ACE-Step v1 3.5B generator.
 //!
 //! Spawns the Python subprocess at `model-adapter/python/telaradio_ace_step.py`
 //! using the uv-managed venv at `model-adapter/python/.venv/bin/python`.
@@ -28,8 +28,8 @@ use crate::ipc::IpcChannel;
 /// Stable id under which Phase 1b2's ACE-Step engine surfaces in
 /// `recipe.model.id`. Distinct from `mock-sine` so a recipe pinning
 /// either generator routes unambiguously.
-pub const ACE_STEP_GENERATOR_ID: &str = "ace-step-1.5-xl";
-pub const ACE_STEP_GENERATOR_VERSION: &str = "1.5.0";
+pub const ACE_STEP_GENERATOR_ID: &str = "ace-step-v1-3.5b";
+pub const ACE_STEP_GENERATOR_VERSION: &str = "1.0.0";
 
 pub struct AceStepGenerator {
     channel: IpcChannel,

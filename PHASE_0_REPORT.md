@@ -97,7 +97,7 @@ First-launch download is the standard pattern for ML-bundled apps.
 - Mono vs. stereo output, sample rate convention — Phase 1 first commit
 - Specific lint rules for recipe PRs — Phase 2 when CI exists
 
-## What we know about ACE-Step 1.5 XL
+## What we know about ACE-Step v1 3.5B
 
 - Apache 2.0 license — compatible with AGPL distribution.
 - Apple Silicon support; <4 GB VRAM (M-series unified memory equivalent).

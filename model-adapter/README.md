@@ -32,8 +32,8 @@ cd python && uv run --with ruff ruff check . && uv run --with ty ty check .
 
 ## Implemented (Phase 1b2)
 
-- `ace_step::AceStepGenerator` (id: `"ace-step-1.5-xl"`,
-  version: `"1.5.0"`) — real ACE-Step inference via
+- `ace_step::AceStepGenerator` (id: `"ace-step-v1-3.5b"`,
+  version: `"1.0.0"`) — real ACE-Step inference via
   `python/telaradio_ace_step.py` running in the project venv. Same
   NDJSON IPC as the mock; the engine swap is invisible to callers.
 - `ipc::IpcChannel` (private) — shared NDJSON-over-stdio plumbing

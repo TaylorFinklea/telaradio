@@ -12,7 +12,7 @@ const VALID_MINIMAL: &str = r#"{
   "tags": ["lofi", "focus"],
   "prompt": "warm vinyl lofi, jazzy keys, slow tempo, no vocals",
   "seed": 1893421,
-  "model": { "id": "ace-step-1.5-xl", "version": "1.5.0" },
+  "model": { "id": "ace-step-v1-3.5b", "version": "1.0.0" },
   "duration_seconds": 240,
   "modulation": { "rate_hz": 16.0, "depth": 0.5, "envelope": "square" },
   "created_at": "2026-04-26T15:00:00Z",
@@ -31,8 +31,8 @@ fn parses_a_valid_recipe() {
     assert!((recipe.modulation.rate_hz - 16.0).abs() < f64::EPSILON);
     assert!((recipe.modulation.depth - 0.5).abs() < f64::EPSILON);
     assert_eq!(recipe.modulation.envelope, Envelope::Square);
-    assert_eq!(recipe.model.id, "ace-step-1.5-xl");
-    assert_eq!(recipe.model.version, "1.5.0");
+    assert_eq!(recipe.model.id, "ace-step-v1-3.5b");
+    assert_eq!(recipe.model.version, "1.0.0");
     assert_eq!(recipe.author, "tfinklea");
 }
 

@@ -22,8 +22,8 @@ reject unknown versions cleanly.
   "prompt": "warm vinyl lofi, jazzy keys, slow tempo, no vocals",
   "seed": 1893421,
   "model": {
-    "id": "ace-step-1.5-xl",
-    "version": "1.5.0"
+    "id": "ace-step-v1-3.5b",
+    "version": "1.0.0"
   },
   "duration_seconds": 240,
   "modulation": {
@@ -46,7 +46,7 @@ reject unknown versions cleanly.
 | `tags` | string[] | yes | Free-form. Used for library browsing/filtering. |
 | `prompt` | string | yes | Passed to the model. Determinism depends on prompt + seed + model id+version. |
 | `seed` | integer | yes | Generator-input seed. |
-| `model.id` | string | yes | e.g. `ace-step-1.5-xl`. Recipes pin a specific implementation. |
+| `model.id` | string | yes | e.g. `ace-step-v1-3.5b`. Recipes pin a specific implementation. |
 | `model.version` | string | yes | Semver. Pin so audio reproduces. |
 | `duration_seconds` | integer | yes | Generated track length. |
 | `modulation.rate_hz` | number | yes | AM rate. Default 16. Allowed: any positive number; UI exposes 8/12/16/20 in advanced mode. |
@@ -114,8 +114,8 @@ Every generator implements:
 
 ```rust
 pub trait Generator {
-    fn id(&self) -> &str;            // e.g. "ace-step-1.5-xl"
-    fn version(&self) -> &str;       // e.g. "1.5.0"
+    fn id(&self) -> &str;            // e.g. "ace-step-v1-3.5b"
+    fn version(&self) -> &str;       // e.g. "1.0.0"
     fn generate(
         &self,
         prompt: &str,
