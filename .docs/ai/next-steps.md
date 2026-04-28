@@ -1,53 +1,49 @@
 # Next steps
 
 Phase 1 checklist lives in [`../../ROADMAP.md`](../../ROADMAP.md). Phase
-1a (recipe core) and Phase 1b (Generator trait + mock subprocess) are
-complete. The next decision point: **Phase 1b2 (real ACE-Step) or Phase 1c
-(AM modulation DSP) first?** Both can proceed independently because the
-mock generator unblocks downstream work.
+1a (recipe core), Phase 1b (Generator trait + mock subprocess), and
+Phase 1c (AM modulation DSP) are complete. Phase 1b2 (real ACE-Step) is
+building in parallel.
 
-## Recommended: Phase 1c — AM modulation DSP (next session)
+## Recommended: Phase 1d — macOS Swift player shell
 
-The DSP can be built and ear-validated against the mock's 440 Hz sine
-without needing the real model. Faster iteration loop than Phase 1b2.
+With the DSP done and the mock generator producing real WAV buffers,
+the macOS player can be wired up end-to-end against the mock and
+reuse all the Rust pieces unchanged when ACE-Step lands.
 
-1. Bootstrap the `dsp/` workspace member crate.
-2. (TDD) Define `AmEnvelope` (Square / Sine / Triangle) and the AM
-   transform `apply_am(buffer, rate_hz, depth, envelope) -> WavBuffer`
-   per Woods et al. 2024 §Methods. Pure function; no allocation beyond
-   the output buffer.
-3. (TDD) Tests: at depth=0.0 the buffer is unchanged; at depth=1.0 +
-   square envelope, 50% of samples are zero; rate-locked phase test.
-4. CLI smoke binary `apply-modulation` that takes a recipe + WAV path
-   and writes a modulated WAV. Useful for ear-validation.
-5. Wire DSP into the model-adapter pipeline so a generated buffer can
-   be modulated end-to-end.
+1. Bootstrap `apple/` Swift package with a minimal AppKit/SwiftUI
+   shell: load recipe, play, pause, skip.
+2. FFI / IPC layer to the Rust workspace. Two candidates:
+   (a) build the Rust workspace as a static library and call it from
+   Swift via a C-ABI shim, or (b) spawn the Rust binary as a
+   subprocess and stream WAV over stdout. Decision deferred to Phase
+   1d kickoff.
+3. Wire `Recipe::parse` → `SubprocessGenerator::generate` →
+   `dsp::apply_am` end-to-end. The Swift app is a thin player on top.
 
-## Alternative: Phase 1b2 — real ACE-Step (when ready)
+## Alternative: Phase 1e — background buffer queue
 
-1. Decide Python venv strategy: a `uv`-managed project under
-   `model-adapter/python/` (current ad-hoc `uv run --with` becomes a
-   real `pyproject.toml` with ACE-Step deps).
-2. First-launch HF model download (resumable HTTP) into
-   `~/Library/Application Support/Telaradio/models/`. Add an "use
-   existing weights file" path for air-gapped installs.
-3. New `AceStepGenerator` impl alongside `SubprocessGenerator` (or
-   parameterize the engine inside the existing subprocess via a
-   request field).
-4. Mark e2e tests `#[ignore]` for the ACE-Step integration since they
-   need ~10s and ~5 GB on disk.
+Once the player exists, keep 2–3 tracks generated and modulated ahead
+in a background queue so playback feels instant. Probably better as
+Phase 1e (after 1d) than blended into 1d.
 
-## After 1c / 1b2
+## Phase 1b2 is in flight
 
-- Phase 1d — macOS Swift app shell
+`phase-1b2` branch is being built in a parallel worktree. Both
+branches modify the workspace `Cargo.toml` `members` list and the
+same handoff docs; the parent session merges. No action needed from
+this branch.
+
+## After 1d / 1b2
+
 - Phase 1e — Background buffer queue
 - Phase 1f — Hand-seed ~20 starter recipes
 - Phase 1g — Settings UI (preset / 3-tier intensity / advanced)
+- Phase 1 wrap: `PHASE_1_REPORT.md` covering ear-eval against Brain.fm
 
-## Decisions to make at the start of Phase 1c
+## Optional follow-ups deferred from Phase 1c
 
-- AM math precision: f32 (matches `WavBuffer.samples`) or f64 internally?
-- Should the DSP own a separate `ModulationEnvelope` enum, or reuse
-  `Recipe.modulation.envelope` directly? (Currently the recipe envelope
-  is in `core::recipe::Envelope` and the DSP needs its own anyway since
-  it'll grow rate-modulation patterns over time.)
+- `telaradio-modulate` CLI smoke binary for ear-validation (deferred
+  by spec; defer until felt need).
+- Recipe-schema field for configurable anti-click ramp time (Phase 2
+  candidate; current 1 ms hard-coded constant is fine for v1).

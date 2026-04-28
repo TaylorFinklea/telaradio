@@ -1,43 +1,54 @@
 # Current state
 
-**Date**: 2026-04-27
-**Phase**: Phase 1b complete; Phase 1b2 (real ACE-Step + HF download)
-not yet started.
-**Build status**: `cargo test` green (29/29 across audio, generator,
-protocol, recipe, end-to-end), `cargo clippy --all-targets -- -D
-warnings` clean (pedantic), `cargo fmt --check` clean. Python `ruff
-check` and `ty check` clean.
+**Date**: 2026-04-26
+**Phase**: Phase 1c (AM modulation DSP) complete on branch `phase-1c`.
+Phase 1b2 (real ACE-Step + HF download) building in parallel on
+`phase-1b2`.
+**Build status**: `cargo test --workspace` green (40/40 across
+audio, generator, protocol, recipe, end-to-end, am_apply, dsp_pipeline);
+`cargo clippy --all-targets -- -D warnings` clean (pedantic);
+`cargo fmt --check` clean. Python `ruff check` and `ty check` clean.
 
 ## Last session summary
 
-Phase 1b — Generator trait + mock subprocess. Added `core::audio` (with
-`WavBuffer` and the 44.1 kHz / stereo / DEFAULT constants) and
-`core::generator` (the `Generator` trait + `GeneratorError`). Bootstrapped
-the `model-adapter` workspace member crate with NDJSON-over-stdio IPC
-types, a Python script speaking the protocol, and a `SubprocessGenerator`
-that spawns/holds/drops the child process cleanly. End-to-end test
-exercises the full pipeline: Rust spawns Python, sends a `Request`,
-Python writes a 440 Hz sine WAV, Rust reads it and returns a `WavBuffer`.
+Phase 1c — AM modulation DSP. Bootstrapped the `dsp/` workspace member
+(`telaradio-dsp`) with `apply_am(buffer, rate_hz, depth, envelope) ->
+WavBuffer`, a pure transform per Woods et al. 2024 §Methods. Added a
+DSP-side `Envelope` enum (Square / Sine / Triangle) decoupled from
+`core::recipe::Envelope`, with a small `From` bridge. Square gate gets
+a 1 ms linear crossfade centered on each transition to suppress
+audible clicks at high depth. Stereo channels are modulated identically
+(paper-faithful). Sample-rate-aware phase: `phase = (i / sr) *
+rate_hz`.
 
-Project rename from Lockstep landed earlier in the same date. See
-[`phases/phase-1b-model-adapter-report.md`](phases/phase-1b-model-adapter-report.md).
+10 new integration tests in `dsp/tests/am_apply.rs` cover depth=0
+identity, depth=1 trough floor, rate-locked phase, Sine smoothness,
+Triangle piecewise-linearity, stereo invariant, anti-click ramp, mono
+support, and metadata preservation. 1 end-to-end smoke test in
+`model-adapter/tests/dsp_pipeline.rs` proves the mock generator →
+apply_am pipeline alters the sample distribution as expected.
+
+See [`phases/phase-1c-am-modulation-report.md`](phases/phase-1c-am-modulation-report.md).
 
 ## What exists
 
 - Phase 0 scaffold (CLAUDE.md, ARCHITECTURE.md, ROADMAP.md, README.md,
   PHASE_0_REPORT.md, LICENSE, CLA.md, `.github/`, module READMEs,
   `.docs/ai/` handoff)
-- Cargo workspace at project root
+- Cargo workspace at project root (members: `core`, `dsp`,
+  `model-adapter`)
 - `telaradio-core` crate (`core/`):
   - `recipe::*` — schema v1 types + strict parser
-  - `audio::WavBuffer` + `DEFAULT_SAMPLE_RATE_HZ` (44_100) +
-    `DEFAULT_CHANNELS` (2)
+  - `audio::WavBuffer` + `DEFAULT_SAMPLE_RATE_HZ` / `DEFAULT_CHANNELS`
   - `generator::Generator` trait + `GeneratorError` enum
+- `telaradio-dsp` crate (`dsp/`) — Phase 1c:
+  - `dsp::Envelope` (Square / Sine / Triangle) + `From<core::recipe::Envelope>`
+  - `dsp::apply_am(buffer, rate_hz, depth, envelope) -> WavBuffer`
 - `telaradio-model-adapter` crate (`model-adapter/`):
   - `protocol::Request` / `protocol::Response` (NDJSON)
   - `subprocess::SubprocessGenerator` (mock-sine)
   - `python/telaradio_subprocess.py` + `python/pyproject.toml`
-- 29 Rust integration tests across 4 test files
+- 40 Rust integration tests across 7 test files
 - `recipes/example-foggy-lofi.json` — realistic schema v1 example
 - GitHub repo `TaylorFinklea/telaradio` (public)
 
@@ -47,13 +58,15 @@ None.
 
 ## What does NOT exist yet
 
-- Real ACE-Step inference (Phase 1b2)
+- Real ACE-Step inference (Phase 1b2 — building in parallel)
 - HF first-launch model download (Phase 1b2)
-- `dsp/` amplitude modulation (Phase 1c)
 - `apple/` macOS Swift app (Phase 1d)
 - Background buffer queue (Phase 1e)
 - Remaining ~19 starter recipes (Phase 1f)
 - Settings UI (Phase 1g)
+- CLI smoke binary `telaradio-modulate` (deferred from Phase 1c —
+  optional, defer until felt need)
+- Configurable ramp-time field on `recipe.modulation` (Phase 2 candidate)
 
 ## Pointers
 

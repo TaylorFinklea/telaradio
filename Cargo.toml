@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["core", "model-adapter"]
+members = ["core", "dsp", "model-adapter"]
 
 [workspace.package]
 version = "0.0.1"
@@ -19,6 +19,7 @@ uuid = { version = "1", features = ["v4", "serde"] }
 hound = "3"
 tempfile = "3"
 telaradio-core = { path = "core" }
+telaradio-dsp = { path = "dsp" }
 
 [workspace.lints.clippy]
 pedantic = { level = "warn", priority = -1 }

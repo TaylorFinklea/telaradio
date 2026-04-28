@@ -20,7 +20,7 @@ it sound good enough to use during a real work session.
 - [ ] First-launch model download (resumable HTTP, HF Hub, into
       `~/Library/Application Support/Telaradio/models/`); also support
       pointing at a pre-existing weights file
-- [ ] Rust AM modulation DSP per Woods et al. §Methods (square envelope,
+- [x] Rust AM modulation DSP per Woods et al. §Methods (square envelope,
       configurable rate + depth, default 16 Hz / 0.5)
 - [ ] Native macOS Swift app: minimal player UI (load recipe, play, pause,
       skip)

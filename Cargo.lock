@@ -379,6 +379,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "telaradio-dsp"
+version = "0.0.1"
+dependencies = [
+ "telaradio-core",
+]
+
+[[package]]
 name = "telaradio-model-adapter"
 version = "0.0.1"
 dependencies = [
@@ -386,6 +393,7 @@ dependencies = [
  "serde",
  "serde_json",
  "telaradio-core",
+ "telaradio-dsp",
  "tempfile",
  "thiserror",
 ]

@@ -32,9 +32,17 @@ cargo clippy --all-targets -- -D warnings
 cargo fmt --check
 ```
 
+## Implemented (Phase 1c)
+
+`telaradio-dsp` lives at `../dsp/` and consumes `core::WavBuffer` /
+`core::recipe::Envelope` from this crate. `apply_am(buffer, rate_hz,
+depth, envelope) -> WavBuffer` is a pure transform; see `dsp/README.md`
+for the full surface.
+
 ## Planned
 
-- `dsp/` — amplitude modulation per Woods et al. 2024 (Phase 1c)
 - ACE-Step generator implementation alongside the mock (Phase 1b2)
+- HF first-launch model download (Phase 1b2)
+- macOS Swift player (Phase 1d)
 
 The `model-adapter/`, `dsp/`, and `library/` crates depend on this one.

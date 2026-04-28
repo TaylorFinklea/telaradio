@@ -115,3 +115,50 @@ secured.
 **Implication for future sessions:** if you find a stray reference to
 "Lockstep" anywhere in the repo, it's a leftover from the rename and
 should be updated.
+
+## 2026-04-26 — Phase 1c: AM modulation DSP
+
+1. **`dsp::Envelope` is decoupled from `core::recipe::Envelope`.** A
+   small `From<core::recipe::Envelope>` impl bridges the two for
+   pipeline glue. Reason: DSP can grow new envelope shapes (rate
+   modulation, stochastic gating, etc.) without forcing a recipe
+   schema bump. Cost is six lines.
+2. **Internal AM math is f32 for the per-sample multiplication and
+   f64 for phase / gate computation.** Phase accumulates over many
+   samples (drift matters); gate is in `[0, 1]` and gets multiplied
+   into f32 audio (precision is dominated by the f32 sample
+   eventually). The f64 → f32 cast at multiplication time is a
+   sub-LSB rounding on a bounded value.
+3. **1 ms anti-click ramp, hard-coded.** Centered on each Square
+   transition (±0.5 ms each side). Centering preserves the average
+   gate value over a full cycle, keeping loudness statistics stable
+   across `apply_am` calls. Configurability is a Phase 2 candidate.
+4. **Stereo channels modulated identically.** Paper-faithful per
+   Woods et al. 2024. The same gate value applies to both channels of
+   each frame; no per-channel decorrelation. Future "stereo widening"
+   transforms would live as separate DSP stages downstream.
+5. **Sine and Triangle envelopes ship now**, even though only Square
+   is in the recipe v1 default. Cost is small (a `match` arm each)
+   and the recipe schema already accepts `"sine"` / `"triangle"`.
+   This avoids a "sine/triangle do nothing" footgun if a recipe
+   author flips the field.
+6. **`apply_am` is a free function, not a method on `WavBuffer`.**
+   Keeps `core::audio` runtime-free and DSP-agnostic. Pipeline code
+   reaches `apply_am(&buf, ...)` directly.
+7. **Pipeline smoke test lives in `model-adapter/tests/`**, not
+   `dsp/tests/`. It exercises both the mock subprocess and the DSP
+   crate; placing it next to the mock keeps `telaradio-dsp` free of
+   process-spawning test deps.
+
+Mid-build judgment calls (logged here, not re-asked):
+
+- **`From<core::recipe::Envelope> for dsp::Envelope` shipped now**
+  even though the spec deferred it. Pipeline code (Phase 1d/1e)
+  needs it; six lines is not worth a future commit.
+- **Cast lints** (`cast_precision_loss`, `cast_possible_truncation`,
+  `cast_sign_loss`) are allowed locally on `apply_am` and at module
+  level in the integration tests. Inline rationale comment in
+  `am.rs` explains why each cast is safe.
+- **Test-module-level `#![allow]` for clippy casts**, not a
+  per-function allow. Audio-math tests have casts every few lines;
+  per-test allows would be noisier than the lints they suppress.
