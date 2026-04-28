@@ -3,9 +3,12 @@
 //! Phase 1b: Generator trait impls backed by a Python subprocess running a
 //! mock 440 Hz sine engine. Phase 1b2 swaps the mock for real ACE-Step.
 
+pub mod ace_step;
 pub mod hf_download;
+mod ipc;
 pub mod model_install;
 pub mod protocol;
 pub mod subprocess;
 
+pub use ace_step::{ACE_STEP_GENERATOR_ID, ACE_STEP_GENERATOR_VERSION, AceStepGenerator};
 pub use subprocess::{MOCK_GENERATOR_ID, MOCK_GENERATOR_VERSION, SubprocessGenerator};

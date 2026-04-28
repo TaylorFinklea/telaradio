@@ -63,18 +63,8 @@ fn second_call_is_idempotent_when_manifest_validates() {
     let install_dir = dir.path().join("ace-step");
     let artifacts = vec![artifact_for(&server)];
 
-    ensure_model(
-        &install_dir,
-        &artifacts,
-        InstallMode::Download(None),
-    )
-    .expect("first install");
-    ensure_model(
-        &install_dir,
-        &artifacts,
-        InstallMode::Download(None),
-    )
-    .expect("second install");
+    ensure_model(&install_dir, &artifacts, InstallMode::Download(None)).expect("first install");
+    ensure_model(&install_dir, &artifacts, InstallMode::Download(None)).expect("second install");
 
     // First call hits the mock; second should not (manifest is valid).
     assert_eq!(mock.hits(), 1);
@@ -128,12 +118,7 @@ fn corrupt_existing_manifest_triggers_redownload() {
     let install_dir = dir.path().join("ace-step");
     let artifacts = vec![artifact_for(&server)];
 
-    ensure_model(
-        &install_dir,
-        &artifacts,
-        InstallMode::Download(None),
-    )
-    .expect("first install");
+    ensure_model(&install_dir, &artifacts, InstallMode::Download(None)).expect("first install");
 
     // Corrupt the artifact on disk and remove the model file partially.
     {
@@ -145,12 +130,7 @@ fn corrupt_existing_manifest_triggers_redownload() {
         f.write_all(b"junk").expect("write junk");
     }
 
-    ensure_model(
-        &install_dir,
-        &artifacts,
-        InstallMode::Download(None),
-    )
-    .expect("recover");
+    ensure_model(&install_dir, &artifacts, InstallMode::Download(None)).expect("recover");
 
     assert_eq!(
         fs::read(install_dir.join("model.safetensors")).expect("read model"),

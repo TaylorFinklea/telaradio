@@ -108,10 +108,12 @@ pub fn ensure_model(
                 fs::copy(&src, &dst)?;
                 let actual = sha256_file(&dst)?;
                 if actual != artifact.sha256 {
-                    return Err(ModelInstallError::Download(DownloadError::ChecksumMismatch {
-                        expected: artifact.sha256.clone(),
-                        actual,
-                    }));
+                    return Err(ModelInstallError::Download(
+                        DownloadError::ChecksumMismatch {
+                            expected: artifact.sha256.clone(),
+                            actual,
+                        },
+                    ));
                 }
             }
         }
@@ -137,7 +139,10 @@ pub fn prompt_install_mode_cli<R: BufRead, W: Write>(
     writer: &mut W,
 ) -> std::io::Result<InstallMode> {
     writeln!(writer, "Telaradio needs the ACE-Step model (~5 GB).")?;
-    writeln!(writer, "  download                — fetch from Hugging Face")?;
+    writeln!(
+        writer,
+        "  download                — fetch from Hugging Face"
+    )?;
     writeln!(
         writer,
         "  use existing <path>     — copy from an existing directory",
@@ -168,7 +173,10 @@ struct Manifest {
     artifacts: Vec<ModelArtifact>,
 }
 
-fn write_manifest(install_dir: &Path, artifacts: &[ModelArtifact]) -> Result<(), ModelInstallError> {
+fn write_manifest(
+    install_dir: &Path,
+    artifacts: &[ModelArtifact],
+) -> Result<(), ModelInstallError> {
     let manifest = Manifest {
         artifacts: artifacts.to_vec(),
     };

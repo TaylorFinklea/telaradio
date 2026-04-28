@@ -113,14 +113,11 @@ pub fn download_with_resume(
         });
     }
 
-    let mut file = OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(dest)?;
+    let mut file = OpenOptions::new().create(true).append(true).open(dest)?;
 
     let mut written: u64 = resume_from;
     let mut progress = progress;
-    let mut buf = [0_u8; 64 * 1024];
+    let mut buf = vec![0_u8; 64 * 1024];
 
     loop {
         if cancel.is_cancelled() {
@@ -155,7 +152,7 @@ pub fn download_with_resume(
 pub fn sha256_file(path: &Path) -> Result<String, std::io::Error> {
     let mut file = File::open(path)?;
     let mut hasher = Sha256::new();
-    let mut buf = [0_u8; 64 * 1024];
+    let mut buf = vec![0_u8; 64 * 1024];
     loop {
         let n = file.read(&mut buf)?;
         if n == 0 {
