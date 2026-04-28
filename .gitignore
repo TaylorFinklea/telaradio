@@ -19,7 +19,6 @@ Cargo.lock.bak
 **/.venv/
 **/__pycache__/
 **/*.pyc
-**/uv.lock
 
 # Environment / local config
 .env
