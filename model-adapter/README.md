@@ -30,12 +30,44 @@ cargo test -p telaradio-model-adapter
 cd python && uv run --with ruff ruff check . && uv run --with ty ty check .
 ```
 
-## Planned
+## Implemented (Phase 1b2)
 
-- Phase 1b2: `AceStepGenerator` alongside the mock — same trait, real
-  ACE-Step 1.5 XL inference behind it. Plus first-launch resumable HTTP
-  download from Hugging Face into
-  `~/Library/Application Support/Telaradio/models/`.
+- `ace_step::AceStepGenerator` (id: `"ace-step-1.5-xl"`,
+  version: `"1.5.0"`) — real ACE-Step inference via
+  `python/telaradio_ace_step.py` running in the project venv. Same
+  NDJSON IPC as the mock; the engine swap is invisible to callers.
+- `ipc::IpcChannel` (private) — shared NDJSON-over-stdio plumbing
+  composed by both generators.
+- `hf_download::download_with_resume` — synchronous resumable HTTP
+  downloader with `Range` header resume, sha256 validation, an
+  optional progress callback, and a `CancellationToken`. Pure Rust
+  (`reqwest` + `rustls-tls` + `sha2`).
+- `model_install::ensure_model` — installs ACE-Step weights from
+  Hugging Face (`InstallMode::Download`) or copies from a
+  user-supplied directory (`InstallMode::UseExisting`). Idempotent
+  via a `manifest.json` of per-artifact sha256s.
+- `model_install::prompt_install_mode_cli` — reader/writer-generic
+  one-line stdin parser for first-launch UX (until Phase 1d ships
+  a real UI).
+- `python/telaradio_ace_step.py` — ACE-Step subprocess. Lazy pipeline
+  load on first request; `--probe` prints engine version with no
+  model load.
+- `python/pyproject.toml` — real uv project. Dependencies: `ace-step`
+  (pinned to GitHub commit `1bee4c9f` because the PyPI sdist is broken
+  upstream), `huggingface-hub`. Dev deps: `ruff`, `ty`. The mock
+  subprocess runs from this same venv unchanged.
+
+```bash
+# Rust
+cargo test -p telaradio-model-adapter
+cargo test -p telaradio-model-adapter -- --include-ignored  # opt in to e2e
+
+# Python
+cd python && uv sync && uv run ruff check . && uv run ty check .
+uv run python telaradio_ace_step.py --probe   # prints engine metadata
+```
+
+## Planned
 
 Future generators (MusicGen, YuE, ...) live alongside the existing
 ones; recipes pin `model.id + model.version` for reproducibility.
