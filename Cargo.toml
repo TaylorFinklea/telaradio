@@ -18,6 +18,13 @@ chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 hound = "3"
 tempfile = "3"
+# Phase 1b2: Hugging Face download (resumable HTTP) + sha256 manifest validation.
+# rustls-tls keeps openssl off the dependency surface; blocking client because
+# our caller (`Generator::generate`) is sync-by-design — see
+# `core::generator` docstring.
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "blocking", "stream"] }
+sha2 = "0.10"
+httpmock = "0.7"
 telaradio-core = { path = "core" }
 
 [workspace.lints.clippy]
