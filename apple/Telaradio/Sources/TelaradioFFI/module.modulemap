@@ -1,0 +1,5 @@
+module TelaradioFFI {
+    umbrella header "include/telaradio_ffi.h"
+    link "telaradio_ffi"
+    export *
+}

@@ -1,0 +1,33 @@
+{
+  "": {
+    "swift-dependencies": "/Users/tfinklea/git/musicapp/apple/Telaradio/.build/arm64-apple-macosx/debug/Telaradio.build/master.swiftdeps"
+  },
+  "/Users/tfinklea/git/musicapp/apple/Telaradio/Sources/Telaradio/PlayerView.swift": {
+    "dependencies": "/Users/tfinklea/git/musicapp/apple/Telaradio/.build/arm64-apple-macosx/debug/Telaradio.build/PlayerView.d",
+    "object": "/Users/tfinklea/git/musicapp/apple/Telaradio/.build/arm64-apple-macosx/debug/Telaradio.build/PlayerView.swift.o",
+    "swiftmodule": "/Users/tfinklea/git/musicapp/apple/Telaradio/.build/arm64-apple-macosx/debug/Telaradio.build/PlayerView~partial.swiftmodule",
+    "swift-dependencies": "/Users/tfinklea/git/musicapp/apple/Telaradio/.build/arm64-apple-macosx/debug/Telaradio.build/PlayerView.swiftdeps",
+    "diagnostics": "/Users/tfinklea/git/musicapp/apple/Telaradio/.build/arm64-apple-macosx/debug/Telaradio.build/PlayerView.dia"
+  },
+  "/Users/tfinklea/git/musicapp/apple/Telaradio/Sources/Telaradio/PlayerViewModel.swift": {
+    "dependencies": "/Users/tfinklea/git/musicapp/apple/Telaradio/.build/arm64-apple-macosx/debug/Telaradio.build/PlayerViewModel.d",
+    "object": "/Users/tfinklea/git/musicapp/apple/Telaradio/.build/arm64-apple-macosx/debug/Telaradio.build/PlayerViewModel.swift.o",
+    "swiftmodule": "/Users/tfinklea/git/musicapp/apple/Telaradio/.build/arm64-apple-macosx/debug/Telaradio.build/PlayerViewModel~partial.swiftmodule",
+    "swift-dependencies": "/Users/tfinklea/git/musicapp/apple/Telaradio/.build/arm64-apple-macosx/debug/Telaradio.build/PlayerViewModel.swiftdeps",
+    "diagnostics": "/Users/tfinklea/git/musicapp/apple/Telaradio/.build/arm64-apple-macosx/debug/Telaradio.build/PlayerViewModel.dia"
+  },
+  "/Users/tfinklea/git/musicapp/apple/Telaradio/Sources/Telaradio/Telaradio.swift": {
+    "dependencies": "/Users/tfinklea/git/musicapp/apple/Telaradio/.build/arm64-apple-macosx/debug/Telaradio.build/Telaradio.d",
+    "object": "/Users/tfinklea/git/musicapp/apple/Telaradio/.build/arm64-apple-macosx/debug/Telaradio.build/Telaradio.swift.o",
+    "swiftmodule": "/Users/tfinklea/git/musicapp/apple/Telaradio/.build/arm64-apple-macosx/debug/Telaradio.build/Telaradio~partial.swiftmodule",
+    "swift-dependencies": "/Users/tfinklea/git/musicapp/apple/Telaradio/.build/arm64-apple-macosx/debug/Telaradio.build/Telaradio.swiftdeps",
+    "diagnostics": "/Users/tfinklea/git/musicapp/apple/Telaradio/.build/arm64-apple-macosx/debug/Telaradio.build/Telaradio.dia"
+  },
+  "/Users/tfinklea/git/musicapp/apple/Telaradio/Sources/Telaradio/TelaradioApp.swift": {
+    "dependencies": "/Users/tfinklea/git/musicapp/apple/Telaradio/.build/arm64-apple-macosx/debug/Telaradio.build/TelaradioApp.d",
+    "object": "/Users/tfinklea/git/musicapp/apple/Telaradio/.build/arm64-apple-macosx/debug/Telaradio.build/TelaradioApp.swift.o",
+    "swiftmodule": "/Users/tfinklea/git/musicapp/apple/Telaradio/.build/arm64-apple-macosx/debug/Telaradio.build/TelaradioApp~partial.swiftmodule",
+    "swift-dependencies": "/Users/tfinklea/git/musicapp/apple/Telaradio/.build/arm64-apple-macosx/debug/Telaradio.build/TelaradioApp.swiftdeps",
+    "diagnostics": "/Users/tfinklea/git/musicapp/apple/Telaradio/.build/arm64-apple-macosx/debug/Telaradio.build/TelaradioApp.dia"
+  }
+}

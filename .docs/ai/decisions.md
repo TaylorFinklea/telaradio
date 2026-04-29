@@ -229,3 +229,55 @@ across the codebase to match HF reality:
 the wild yet pinning the old id (the only example recipe is the one we
 also renamed). After the first community recipes ship, the id is
 effectively locked and a future rename would break their reproducibility.
+
+## 2026-04-28 — Phase 1d MVL: macOS player shell
+
+1. **FFI surface: `staticlib` + cbindgen-generated header + Swift
+   `module.modulemap`.** Picked over a CLI-helper subprocess because
+   (a) a real macOS app spawning a CLI tool is unidiomatic, (b) static
+   lib avoids per-generate spawn cost, (c) iOS / App Store
+   distribution later essentially requires this approach.
+2. **Forward declarations in `cbindgen.toml`'s `after_includes`.** The
+   FFI references `Recipe` / `WavBuffer` types from sibling crates
+   that cbindgen can't see (parse_deps = false). Manually injecting
+   `typedef struct TrRecipe TrRecipe;` is cleaner than configuring
+   cbindgen to traverse external crates.
+3. **`MACOSX_DEPLOYMENT_TARGET=13.0` exported by the Makefile.**
+   Aligns the Rust static lib's macOS minimum with the SwiftPM
+   package's `platforms: [.macOS(.v13)]`. Without this, the linker
+   warns about objects built for newer macOS than being linked.
+4. **Phase 1d MVL is mock-only.** The Swift app calls
+   `tr_generate_mock`, not `tr_generate_ace_step`. Real-model wiring
+   is Phase 1d2. Reason: every architectural piece (FFI, build, Swift,
+   AVAudioEngine) is new in this phase; wiring real ACE-Step on top
+   would multiply the things that could go wrong. Land them
+   sequentially.
+5. **Hardcoded recipe path resolved by walking up to find
+   `Cargo.toml`.** Avoids embedding paths into the binary. Works for
+   `swift run` from the workspace and for any in-tree binary location.
+   Replaced when the file picker ships (Phase 1g or earlier if felt).
+6. **AVAudioEngine plays a single `AVAudioPCMBuffer` scheduled with
+   `.interrupts`.** No streaming, no scrubbing. Matches the MVL
+   "press Play, hear modulated sine" goal.
+7. **Swift wrappers own the FFI pointers via `final class` + `deinit`.**
+   ARC handles the lifetime; no manual `tr_*_free` calls in app code.
+   `Recipe` and `WavBuffer` Swift classes hold `OpaquePointer`s that
+   were `Box::into_raw`-ed in Rust.
+8. **`linkerSettings: [.unsafeFlags(["-L../../target/debug"])]`.**
+   Hardcoded relative path from `apple/Telaradio/` to the Rust target
+   dir. Brittle but explicit; the Makefile orchestrates rebuilds in
+   the right order. Phase 4-ish App Store distribution will replace
+   this with a vendored / embedded library.
+
+Mid-build judgment calls (not re-asked):
+
+- **cbindgen 0.27 → 0.29.** 0.27 didn't parse the Rust 2024
+  `#[unsafe(no_mangle)]` syntax and produced an empty header. 0.29
+  works.
+- **`#[allow(clippy::cast_precision_loss)]` at the FFI test module
+  level.** Test data generators cast small loop indices to f32; the
+  values fit comfortably in f32's mantissa. Per-line allows would be
+  noisier than the suppressed lint.
+- **Used `OpaquePointer` directly in Swift wrappers**, not
+  `UnsafePointer<TrRecipe>`. Forward-declared C types import as
+  `OpaquePointer?` in Swift; matching that simplifies the bridging.

@@ -1,73 +1,86 @@
 # Next steps
 
 Phase 1 checklist lives in [`../../ROADMAP.md`](../../ROADMAP.md).
-Phases 1a (recipe core), 1b (Generator trait + mock subprocess), 1b2
-(real ACE-Step + HF download), and 1c (AM modulation DSP) are
-complete and merged into `main`.
+Phases 1a (recipe core), 1b (mock subprocess), 1b2 (real ACE-Step + HF
+download), 1c (AM modulation DSP), and 1d MVL (macOS Swift player,
+mock-only) are complete. Real ACE-Step is wired in `model-adapter` but
+not yet exposed to the Swift app.
 
-## Recommended next: Phase 1d — macOS Swift player shell
+## First action: confirm audio works
 
-With the DSP done, ACE-Step wired up, and the mock available for fast
-tests, the natural next phase is a minimal native macOS app that:
+`make app-run` should launch the Telaradio app. Click "Play":
 
-1. Loads a `Recipe` via `Recipe::parse`.
-2. Resolves the ACE-Step model dir via `model_install::ensure_model`
-   (replacing `prompt_install_mode_cli` with a real SwiftUI prompt).
-3. Calls a generator (`AceStepGenerator` or the mock for tests) via
-   FFI or a small Rust shim.
-4. Applies AM modulation (`dsp::apply_am`) per `recipe.modulation`.
-5. Plays the resulting `WavBuffer` via AVFoundation with basic
-   transport controls (load, play, pause, skip).
+1. The Mac speakers should produce an audible 440 Hz sine wave that
+   pulses at 16 Hz (the modulation rate).
+2. Pause / Stop should respond.
 
-Decisions to make at the start of Phase 1d:
+If anything sounds wrong — silence, distortion, mismatched sample
+rate, the modulation isn't audible — that's the next bug to fix
+before moving on.
 
-- **FFI surface**: thin Rust C API via `cbindgen` (Swift consumes it
-  through a bridging header) vs. spawn the Rust binary as a subprocess
-  and stream WAV over stdout. The C-ABI option is more idiomatic for a
-  native app; the subprocess option is faster to ship.
-- **Sample-rate mismatch handling**: ACE-Step output is 44.1 kHz, but
-  AVFoundation's preferred internal rate on Apple Silicon may be 48
-  kHz. Decide whether to resample at playback or accept the conversion.
-- **First-launch UX**: the model install prompt becomes a SwiftUI
-  flow. Sketch the screens before building.
+## Recommended next: Phase 1d2 — wire real ACE-Step into the Swift app
 
-## Optional: prime the ACE-Step environment
+The Rust pieces all exist (`AceStepGenerator`, `ensure_model`,
+`hf_download`, `model_install`). They just need to be exposed through
+the FFI and surfaced in the SwiftUI player.
 
-Before Phase 1d (or anytime), to validate the full real-model pipeline:
+1. Add FFI functions: `tr_ensure_model_download`,
+   `tr_ensure_model_use_existing`, `tr_generate_ace_step`. Mirror the
+   error-via-null + `tr_last_error` convention.
+2. Add a "Choose model source" SwiftUI sheet for first launch:
+   - "Download (~5 GB)" with a progress bar (drives `download_with_resume`'s
+     callback).
+   - "Use existing folder" → `NSOpenPanel` directory picker, then
+     `model_install::ensure_model(InstallMode::UseExisting)`.
+3. Persist the resolved model path in `UserDefaults`.
+4. Replace the hardcoded `generateMock` call in `PlayerViewModel` with
+   a switch: if a model path is configured, use `generateAceStep`;
+   else fall back to mock. Show a setting to toggle.
+5. Add a real-model integration smoke test (kept `#[ignore]`d in
+   `model-adapter`; verify the Swift wiring against it manually).
 
-1. `cd model-adapter/python && uv sync` — first-time install is heavy
-   (multi-GB venv, ~170 deps).
-2. Download ACE-Step weights from
-   `https://huggingface.co/ACE-Step/ACE-Step-v1-3.5B` into a chosen
-   `$TELARADIO_MODEL_DIR`.
-3. Run the e2e test: `TELARADIO_MODEL_DIR=$DIR cargo test -p
-   telaradio-model-adapter -- --include-ignored ace_step_e2e`.
+## Alternative: Phase 1e — background buffer queue
 
-Skip if you'd rather wait until Phase 1d's Swift app exercises it.
+Once 1d2 lands, the cold-start latency on real ACE-Step (~10s for a
+4-min track on consumer hardware) will be felt every time you click
+Play. The fix is the buffer queue from the original Phase 0 plan:
+keep 2-3 tracks generated and modulated ahead of time during idle.
 
-## After Phase 1d
+Worth doing after 1d2 — without real ACE-Step wired up, there's no
+latency to mask.
 
-- Phase 1e — Background buffer queue (keep 2–3 tracks ahead generated
-  and modulated during idle time)
+## After 1d2 / 1e
+
 - Phase 1f — Hand-seed ~20 starter recipes (lofi, ambient, electronic,
-  nature-hybrid prompts)
+  nature-hybrid prompts). Now that the full pipeline runs, recipes
+  can be ear-validated as they're authored.
 - Phase 1g — Settings UI (preset selector / 3-tier intensity slider /
   advanced rate-depth-bypass panel)
 - Phase 1 wrap: `PHASE_1_REPORT.md` covering ear-eval against Brain.fm
 
-## Open follow-ups from Phase 1b2
+## Open follow-ups
 
-- **ACE-Step PyPI sdist is broken.** `setup.py` reads a
-  `requirements.txt` not in the tarball. We pin a GitHub commit
-  (`1bee4c9f`) instead via `[tool.uv.sources]`. Periodically check if
-  upstream has re-published; swap to a plain PyPI version if so.
-- **`ensure_model` is not yet wired into `AceStepGenerator::spawn`.**
-  The pieces exist; the glue lands in Phase 1d when first-launch UX
-  becomes real.
+### From Phase 1d (deferred / explicit non-goals)
 
-## Open follow-ups from Phase 1c
+- File picker for arbitrary recipes — defer until felt; current
+  hardcoded path is fine for one-developer usage
+- Multi-track playlist / skip-ahead — Phase 1e (buffer queue) is the
+  natural place
+- Now Playing / lock-screen integration — worth doing eventually,
+  not v1
+- Bundling the Rust static lib into a proper `.app` bundle — Phase
+  4-ish (App Store distribution)
+
+### From Phase 1b2 (still open)
+
+- ACE-Step PyPI sdist is broken upstream; we git-pin commit
+  `1bee4c9f`. Periodically check if upstream re-publishes.
+- `ensure_model` is ready but not yet wired into `AceStepGenerator::spawn`;
+  Phase 1d2 closes this loop.
+
+### From Phase 1c (still open, low priority)
 
 - `telaradio-modulate` CLI smoke binary for ear-validation (deferred
-  by spec; defer until felt need).
+  by spec; defer until felt need)
 - Recipe-schema field for configurable anti-click ramp time (Phase 2
-  candidate; current 1 ms hard-coded constant is fine for v1).
+  candidate)
