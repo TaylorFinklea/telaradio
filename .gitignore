@@ -3,6 +3,12 @@
 **/target
 Cargo.lock.bak
 
+# Swift / SwiftPM
+**/.build/
+**/.swiftpm/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+
 # macOS
 .DS_Store
 .AppleDouble
