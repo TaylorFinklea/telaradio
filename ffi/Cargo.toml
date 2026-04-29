@@ -1,0 +1,23 @@
+[package]
+name = "telaradio-ffi"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+description = "Telaradio C-ABI shim. Exposes core/dsp/model-adapter to Swift and other native callers."
+
+[lib]
+crate-type = ["staticlib", "rlib"]
+
+[dependencies]
+telaradio-core.workspace = true
+telaradio-dsp.workspace = true
+telaradio-model-adapter.workspace = true
+
+[build-dependencies]
+cbindgen.workspace = true
+
+[lints]
+workspace = true

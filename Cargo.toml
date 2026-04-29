@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["core", "dsp", "model-adapter"]
+members = ["core", "dsp", "ffi", "model-adapter"]
 
 [workspace.package]
 version = "0.0.1"
@@ -27,6 +27,9 @@ sha2 = "0.10"
 httpmock = "0.7"
 telaradio-core = { path = "core" }
 telaradio-dsp = { path = "dsp" }
+telaradio-model-adapter = { path = "model-adapter" }
+telaradio-ffi = { path = "ffi" }
+cbindgen = "0.29"
 
 [workspace.lints.clippy]
 pedantic = { level = "warn", priority = -1 }
