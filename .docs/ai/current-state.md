@@ -1,9 +1,11 @@
 # Current state
 
-**Date**: 2026-04-28
+**Date**: 2026-04-29
 **Phase**: Phase 1d MVL (macOS Swift player shell, mock-only) complete on
-`main`. Phase 1d2 (real ACE-Step wiring + first-launch model UX) and
-1e (background buffer queue) not yet started.
+`main` and **verified end-to-end through Mac speakers** — clicking Play
+produces the expected 440 Hz sine modulated at 16 Hz. Phase 1d2 (real
+ACE-Step wiring + first-launch model UX) and 1e (background buffer
+queue) not yet started.
 **Build status**: `cargo test --workspace` green (65 passed / 1
 ignored). `cargo clippy --all-targets -- -D warnings` clean (pedantic).
 `cargo fmt --check` clean. `make ffi` regenerates the cbindgen header
@@ -43,10 +45,14 @@ A workspace-root `Makefile` orchestrates the cross-language build:
 is exported to align Rust's deployment target with SwiftPM's
 `platforms: [.macOS(.v13)]`.
 
-**Manual verification still owed**: launch the app, click Play, confirm
-a 440 Hz sine modulated at 16 Hz comes out the speakers. The Rust side
-of this is verified via the new 9 FFI integration tests; the Swift
-side compiles cleanly. The audible-output check is the user's.
+**Manual verification complete (2026-04-29)**: `make app-run` launches
+the Telaradio window, Play produces the expected 440 Hz sine pulsing
+at 16 Hz, Pause/Stop respond. One small fix landed during verification:
+SwiftPM executables on macOS launch without an activation policy, so
+the window never gained focus. Promoting via `NSApplication.shared.setActivationPolicy(.regular)`
++ `activate(ignoringOtherApps: true)` in `TelaradioApp.init()` fixed
+it. Also untracked ~2515 accidentally-committed `apple/Telaradio/.build/`
+artifacts and added `**/.build/` to `.gitignore`.
 
 See [`phases/phase-1d-macos-player-report.md`](phases/phase-1d-macos-player-report.md).
 

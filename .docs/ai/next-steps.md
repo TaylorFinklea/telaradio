@@ -3,20 +3,9 @@
 Phase 1 checklist lives in [`../../ROADMAP.md`](../../ROADMAP.md).
 Phases 1a (recipe core), 1b (mock subprocess), 1b2 (real ACE-Step + HF
 download), 1c (AM modulation DSP), and 1d MVL (macOS Swift player,
-mock-only) are complete. Real ACE-Step is wired in `model-adapter` but
-not yet exposed to the Swift app.
-
-## First action: confirm audio works
-
-`make app-run` should launch the Telaradio app. Click "Play":
-
-1. The Mac speakers should produce an audible 440 Hz sine wave that
-   pulses at 16 Hz (the modulation rate).
-2. Pause / Stop should respond.
-
-If anything sounds wrong — silence, distortion, mismatched sample
-rate, the modulation isn't audible — that's the next bug to fix
-before moving on.
+mock-only) are complete and the player has been **verified end-to-end
+through Mac speakers** (2026-04-29). Real ACE-Step is wired in
+`model-adapter` but not yet exposed to the Swift app.
 
 ## Recommended next: Phase 1d2 — wire real ACE-Step into the Swift app
 

@@ -1,8 +1,7 @@
 # Phase Report: Phase 1d — macOS Swift Player Shell (MVL)
 
-**Date:** 2026-04-28
-**Outcome:** pass (Rust + Swift build verification); audible-output
-check pending user verification
+**Date:** 2026-04-28 (build); 2026-04-29 (audible verification + post-merge fixes)
+**Outcome:** pass — full pipeline verified end-to-end through Mac speakers
 **Spec:** [`phase-1d-macos-player-spec.md`](phase-1d-macos-player-spec.md)
 
 ## Changes
@@ -56,6 +55,19 @@ Mid-build:
 - `#[allow(clippy::cast_precision_loss)]` at FFI test module level
 - `OpaquePointer` (not `UnsafePointer<TrRecipe>`) in Swift wrappers
 
+Post-build (2026-04-29):
+- SwiftPM executables on macOS launch as command-line tools, so the
+  SwiftUI window never gained focus on `make app-run` (built fine, no
+  visible window). Fixed by promoting the activation policy in
+  `TelaradioApp.init()`:
+  `NSApplication.shared.setActivationPolicy(.regular)` +
+  `NSApplication.shared.activate(ignoringOtherApps: true)`. Window now
+  surfaces and grabs focus on launch.
+- Cleanup commit: `apple/Telaradio/.build/` (≈2515 SwiftPM build
+  artifacts) was accidentally tracked during the initial Phase 1d
+  commits. Untracked via `git rm -r --cached` and added
+  `**/.build/` + `**/.swiftpm/` patterns to `.gitignore`.
+
 ## Verification results
 
 ```
@@ -96,10 +108,11 @@ cd apple/Telaradio && swift build → Build complete!
 - [x] `cargo fmt --check` — clean
 - [x] `make ffi` regenerates the C header successfully
 - [x] `make swift` builds the Swift package without errors
-- [ ] **(USER)** `make app-run` launches the Telaradio app
-- [ ] **(USER)** Clicking Play produces an audible 440 Hz sine
+- [x] **(USER)** `make app-run` launches the Telaradio app
+      (after the activation-policy fix — see Mid-build below)
+- [x] **(USER)** Clicking Play produces an audible 440 Hz sine
       pulsing at 16 Hz through the Mac speakers
-- [ ] **(USER)** Pause and Stop respond as expected
+- [x] **(USER)** Pause and Stop respond as expected
 
 ## Follow-up items
 
