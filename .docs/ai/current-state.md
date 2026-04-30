@@ -1,18 +1,50 @@
 # Current state
 
 **Date**: 2026-04-29
-**Phase**: Phase 1d MVL (macOS Swift player shell, mock-only) complete on
-`main` and **verified end-to-end through Mac speakers** — clicking Play
-produces the expected 440 Hz sine modulated at 16 Hz. Phase 1d2 (real
-ACE-Step wiring + first-launch model UX) and 1e (background buffer
-queue) not yet started.
-**Build status**: `cargo test --workspace` green (65 passed / 1
+**Phase**: Phase 1d2 (real ACE-Step wired into the Swift app + first-launch
+model setup sheet) complete on `main` — Rust + Swift build green, audible
+verification of the new real-model + use-existing paths owed by user (the
+existing mock-path regression should still produce the 440 Hz sine at 16 Hz).
+Phase 1e (background buffer queue) not yet started.
+**Build status**: `cargo test --workspace` green (71 passed / 2
 ignored). `cargo clippy --all-targets -- -D warnings` clean (pedantic).
 `cargo fmt --check` clean. `make ffi` regenerates the cbindgen header
 and builds `libtelaradio_ffi.a`. `make swift` links the Swift package
-against it; `make app-run` launches the Telaradio executable.
+against it; `make app-run` launches the Telaradio executable. First
+launch (no `UserDefaults` set) shows a `ModelSetupView` sheet asking the
+user to choose a model source.
 
 ## Last session summary
+
+Phase 1d2 — real ACE-Step wired into the Swift app. Three sequential
+Sonnet sub-agents landed three commits on `main`:
+
+1. **`73ee6d7`** — Rust FFI surface: `tr_cancel_token_*`, `tr_ensure_model_download`,
+   `tr_ensure_model_use_existing`, `tr_generate_ace_step`, `tr_string_free`.
+   Plus `model-adapter::ace_step_artifacts()` exposing the canonical HF
+   manifest (sha256s currently placeholders; real-download bootstrap is a
+   tracked follow-up). 7 new FFI tests; 71/2 totals.
+2. **`c9c0df6`** — Swift wrappers in `Telaradio.swift`: throwing async
+   functions `ensureModelDownload(progress:)`, `ensureModelUseExisting`,
+   `generateAceStep`. Progress-callback bridging via `Unmanaged.passRetained`
+   + a class-based `ProgressContext`; main-actor dispatch inside the C
+   bridge.
+3. **`1328cdf`** — SwiftUI sheet (`ModelSetupView`) + UserDefaults-backed
+   `ModelSettings` + `PlayerViewModel` branching on `settings.backend`
+   (`.mock` keeps the 5-second sine; `.aceStep` calls the real model).
+   `PlayerView` shows the sheet via `.sheet(isPresented: !isConfigured)`
+   with `.interactiveDismissDisabled()`.
+
+Spec at [`phases/phase-1d2-real-ace-step-spec.md`](phases/phase-1d2-real-ace-step-spec.md);
+report at [`phases/phase-1d2-real-ace-step-report.md`](phases/phase-1d2-real-ace-step-report.md).
+
+**Manual verification owed** (user, on macOS): `defaults delete com.telaradio.Telaradio`
+to clear settings, then `make app-run`. Sheet should appear; "Use mock
+for now" should regress cleanly to the 1d MVL behavior. Real-model
+"Use existing folder" path requires real sha256s in
+`ace_step.rs::ace_step_artifacts()` — that's the next-step bootstrap.
+
+### Earlier in the session: Phase 1d MVL
 
 Phase 1d MVL — macOS Swift player shell that exercises the full Rust
 pipeline end-to-end. Three things landed:
@@ -84,12 +116,13 @@ See [`phases/phase-1d-macos-player-report.md`](phases/phase-1d-macos-player-repo
   - `tr_generate_mock` + `tr_apply_am`
   - `tr_last_error`
   - cbindgen-generated `telaradio_ffi.h`
-- `apple/Telaradio/` Swift package — Phase 1d MVL:
+- `apple/Telaradio/` Swift package — Phases 1d MVL + 1d2:
   - `TelaradioFFI` system library target
   - `Telaradio` SwiftUI macOS app target
-  - `Telaradio.swift` (idiomatic wrapper), `Recipe.swift`,
-    `WavBuffer.swift`, `PlayerView.swift`, `PlayerViewModel.swift`,
-    `TelaradioApp.swift`
+  - `Telaradio.swift` (idiomatic wrapper for all FFI surfaces),
+    `PlayerView.swift`, `PlayerViewModel.swift`, `TelaradioApp.swift`,
+    `ModelSettings.swift` (UserDefaults-backed observable), and
+    `ModelSetupView.swift` (first-launch sheet)
 - Workspace `Makefile` orchestrating cross-language builds
 - 65 Rust integration tests across 10 test files (1 ignored e2e)
 - `recipes/example-foggy-lofi.json`
@@ -101,11 +134,14 @@ None.
 
 ## What does NOT exist yet
 
-- Real ACE-Step wired into the Swift app (Phase 1d2)
-- First-launch model install SwiftUI flow (Phase 1d2)
+- Real sha256 checksums in `ace_step::ace_step_artifacts()` — placeholders
+  until the one-time HF download bootstrap. Without this, both the
+  Download path and the Use-existing path fail validation. See report
+  for the procedure.
 - File picker for arbitrary recipes (Phase 1g or sooner if felt)
 - Background buffer queue (Phase 1e)
-- Settings UI: preset / 3-tier / advanced (Phase 1g)
+- Settings UI: preset / 3-tier / advanced (Phase 1g) — also where a
+  "Change model…" affordance and a download-cancel button belong
 - Remaining ~19 starter recipes (Phase 1f)
 - iOS app (Phase 2)
 - CLI smoke binary `telaradio-modulate` (deferred Phase 1c)

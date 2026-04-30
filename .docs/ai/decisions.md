@@ -3,6 +3,69 @@
 Append-only record of non-obvious design, tooling, or scope decisions.
 Each entry: date, decision, rationale, what it supersedes (if anything).
 
+## 2026-04-29 — Phase 1d2: real ACE-Step in the Swift app
+
+1. **Sequential sub-agent dispatch over parallel.** Phase 1d2 has three
+   layers (Rust FFI, Swift wrappers, SwiftUI sheet) where each depends
+   on the previous layer's API surface. Dispatched as three sequential
+   Sonnet sub-agents, each reading the same Phase 1d2 spec, each
+   committing on `main` when green. Saved Opus context for the
+   spec-writing + verification + report-writing portions.
+
+2. **`InstallMode::Download` arity bump** (1 → 2 fields, adding
+   `Option<CancellationToken>`). The internal API previously created
+   its own token; the FFI needed to thread a caller-owned token
+   through. Confined to `model-adapter`; one external callsite (CLI
+   prompt parser) updated. Cleaner than introducing a new variant or
+   a parallel function.
+
+3. **Placeholder sha256s in `ace_step_artifacts()`.** Real values require
+   downloading ~5 GB once to compute. Phase 1d2 ships with placeholders;
+   replacing them is a tracked one-time bootstrap. Code is correct so
+   that filling in checksums is the only remaining blocker for
+   end-to-end real-model verification. Use-existing path is gated on
+   sha256 match — same blocker as Download.
+
+4. **Total-bytes hardcoded in Swift, not exposed via FFI.** Step 2 used
+   `aceStepTotalBytes: UInt64 = 5_000_000_000` rather than adding a
+   `tr_ace_step_total_bytes()` helper. Once real artifact sizes are
+   known, swap to a sum-of-artifacts FFI helper without breaking the
+   Swift surface. Progress fraction clamps to `[0.0, 1.0]` so an
+   inaccurate estimate produces correct UI.
+
+5. **Progress callback dispatches to `MainActor` inside the C bridge.**
+   The download fires the C callback dozens of times per second on the
+   download thread; SwiftUI's `@Published` properties on a `@MainActor`
+   `ObservableObject` MUST receive updates on the main thread. Doing
+   the dispatch once at the C-bridge layer (via `Task { @MainActor in … }`)
+   avoids per-callsite ceremony and is fire-and-forget so the
+   download isn't slowed by UI updates.
+
+6. **`ensure_model` and `AceStepGenerator::spawn` stay separate, not
+   wired together.** The original Phase 1b2 follow-up proposed wiring
+   `ensure_model` inside `spawn`. Rejected: the Swift wrapper calls
+   them in sequence already (ensure first, then spawn-use-drop), and
+   keeping them separate makes the FFI surface compose better — e.g.
+   a future Phase 1g "Re-validate model" button can call ensure
+   without re-spawning a generator.
+
+7. **`ModelSettings` owned by `PlayerView` via `@StateObject`, not at
+   App level.** Simpler today (no second window to share state with).
+   Easy to lift to App level later if Phase 2's iOS port shares the
+   same SwiftPM target.
+
+8. **"Use mock for now" is sticky in `UserDefaults`.** No "Change
+   model…" affordance until Phase 1g Settings panel; workaround is
+   `defaults delete com.telaradio.Telaradio`. Trade-off: keeps the
+   first-launch flow simple at the cost of dev-loop friction during
+   Phase 1f recipe authoring.
+
+9. **No download cancel UI in 1d2.** Cancel token exists at the FFI;
+   the Swift wrapper creates + frees its own internally. Surfacing a
+   Cancel button is Phase 1g concern. Acceptable because the model is
+   only ~5 GB and most users will use the existing-folder path or a
+   one-time download.
+
 ## 2026-04-26 — Phase 0 foundational decisions
 
 See [`../../PHASE_0_REPORT.md`](../../PHASE_0_REPORT.md) for the full

@@ -22,9 +22,11 @@ it sound good enough to use during a real work session.
       pointing at a pre-existing weights file (Phase 1b2)
 - [x] Rust AM modulation DSP per Woods et al. §Methods (square envelope,
       configurable rate + depth, default 16 Hz / 0.5)
-- [~] Native macOS Swift app: minimal player UI (load recipe, play, pause,
-      skip) — Phase 1d MVL shipped (mock-only, hardcoded recipe);
-      Phase 1d2 wires real ACE-Step + first-launch model UX
+- [x] Native macOS Swift app: minimal player UI (load recipe, play, pause,
+      skip) — Phase 1d MVL (mock-only, hardcoded recipe) + Phase 1d2
+      (real ACE-Step wiring + first-launch model setup sheet) shipped.
+      Audible verification of the real-model path waits on the one-time
+      sha256 bootstrap (see `.docs/ai/next-steps.md`).
 - [ ] Background buffer queue: keep 2–3 tracks ahead generated and modulated
       during idle time; regenerate on prompt/seed change
 - [ ] Hand-seeded starter library of ~20 recipes spanning lofi, ambient,

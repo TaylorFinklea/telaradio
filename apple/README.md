@@ -10,17 +10,29 @@ The Swift package consumes the Rust workspace via a C-ABI shim
 AVAudioEngine so background audio, lock-screen controls, and Now
 Playing integration are available when we want to wire them up.
 
-## Implemented (Phase 1d MVL)
+## Implemented (Phase 1d MVL + 1d2)
 
-Single-window SwiftUI macOS app at `apple/Telaradio/`. Click "Play"
-and the app:
+Single-window SwiftUI macOS app at `apple/Telaradio/`. On first launch
+(no `UserDefaults` set), the app shows a **`ModelSetupView`** sheet
+asking the user to choose a model source:
+
+- **Download (~5 GB)** — pulls ACE-Step v1 3.5B from Hugging Face into
+  `~/Library/Application Support/Telaradio/models/ace-step-v1-3.5b/`.
+  Resumable, sha256-validated, with a progress bar.
+- **Use existing folder** — `NSOpenPanel` directory picker; copies/
+  validates an already-downloaded model checkpoint.
+- **Use mock for now** — falls back to the 1d MVL behavior (5-second
+  440 Hz sine) for dev-loop work without 5 GB on disk.
+
+Once configured, click **Play** and the app:
 
 1. Loads `recipes/example-foggy-lofi.json`
-2. Spawns the mock Python subprocess via `tr_generate_mock` to produce
-   a 5-second 440 Hz sine `WavBuffer`
-3. Modulates it via `tr_apply_am` at 16 Hz / 0.5 / Square
-4. Schedules the buffer on `AVAudioEngine` and plays it through the
-   Mac speakers
+2. Branches on `ModelSettings.backend`:
+   - `.mock` → spawns the mock Python subprocess via `tr_generate_mock`
+   - `.aceStep` → spawns ACE-Step via `tr_generate_ace_step`
+3. Modulates the resulting `WavBuffer` via `tr_apply_am` at 16 Hz /
+   0.5 / Square
+4. Schedules it on `AVAudioEngine` and plays it through the speakers
 
 Build it with:
 
@@ -30,8 +42,14 @@ make swift    # swift build inside apple/Telaradio
 make app-run  # both, then launches the Telaradio executable
 ```
 
-Phase 1d MVL is mock-only on purpose. Real ACE-Step wiring + the
-first-launch model install UX land in **Phase 1d2**. File picker,
-multi-track queue, settings panel land in later phases.
+Reset the first-launch flow with `defaults delete com.telaradio.Telaradio`.
 
-Phase 3 picks up the Apple Watch heart-rate adaptation in this directory.
+**Phase 1d2 caveat**: `ace_step_artifacts()` ships with placeholder
+sha256s. Until the one-time HF-download bootstrap fills them in, both
+the Download and Use-existing paths fail validation. The mock path
+works regardless. See `.docs/ai/next-steps.md` for the bootstrap
+procedure.
+
+File picker for arbitrary recipes, background buffer queue, settings
+panel, and download cancellation UX land in later phases. Phase 3
+picks up the Apple Watch heart-rate adaptation in this directory.
