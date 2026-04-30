@@ -28,8 +28,8 @@ use telaradio_core::audio::WavBuffer;
 use telaradio_core::generator::Generator;
 use telaradio_dsp::{Envelope, apply_am};
 use telaradio_model_adapter::{
-    AceStepGenerator, CancellationToken, InstallMode, SubprocessGenerator, ace_step_artifacts,
-    ensure_model,
+    ACE_STEP_TOTAL_BYTES, AceStepGenerator, CancellationToken, InstallMode, SubprocessGenerator,
+    ace_step_artifacts, ensure_model,
 };
 
 /// Opaque cancel token exposed to C callers. Wraps a [`CancellationToken`]
@@ -341,6 +341,14 @@ pub unsafe extern "C" fn tr_cancel_token_free(token: *mut TrCancelToken) {
 }
 
 // ── Model install ─────────────────────────────────────────────────────────────
+
+/// Total bytes the ACE-Step model footprint occupies once
+/// [`tr_ensure_model_download`] finishes. UI code can use this as the
+/// denominator for a download progress bar.
+#[unsafe(no_mangle)]
+pub extern "C" fn tr_ace_step_total_bytes() -> u64 {
+    ACE_STEP_TOTAL_BYTES
+}
 
 /// Free a C string previously returned by [`tr_ensure_model_download`] or
 /// [`tr_ensure_model_use_existing`]. Safe to call on null (no-op).

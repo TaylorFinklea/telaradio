@@ -7,11 +7,7 @@
 import Foundation
 import TelaradioFFI
 
-// tr_ace_step_total_bytes() is not exposed by the FFI yet (Step 1 artifacts
-// use placeholder sha256s). This constant is the approximate total download
-// size of ACE-Step v1 3.5B. Progress fractions may drift past 1.0 if the
-// real file sizes differ; the callback clamps to [0.0, 1.0].
-private let aceStepTotalBytes: UInt64 = 5_000_000_000
+private let aceStepTotalBytes: UInt64 = tr_ace_step_total_bytes()
 
 /// Errors surfaced by the FFI layer.
 enum TelaradioError: Error, CustomStringConvertible {

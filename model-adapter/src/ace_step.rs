@@ -14,9 +14,9 @@
 //! contract gets CI coverage without ACE-Step installed.
 //!
 //! The real ACE-Step round-trip lives in `tests/ace_step_e2e.rs` and is
-//! `#[ignore]`d — it needs the model checkpoint (~5 GB) plus a working
-//! torch / transformers install. Opt in with
-//! `cargo test -- --include-ignored`.
+//! `#[ignore]`d — it needs the model checkpoint (~7.7 GB, see
+//! [`ACE_STEP_TOTAL_BYTES`]) plus a working torch / transformers install.
+//! Opt in with `cargo test -- --include-ignored`.
 
 use std::path::{Path, PathBuf};
 
@@ -33,10 +33,15 @@ pub const ACE_STEP_GENERATOR_ID: &str = "ace-step-v1-3.5b";
 pub const ACE_STEP_GENERATOR_VERSION: &str = "1.0.0";
 
 /// Canonical artifact list for ACE-Step v1 3.5B from Hugging Face
-/// (`ACE-Step/ACE-Step-v1-3.5B`). The model is downloaded via
-/// `snapshot_download`, so each file lives at a known relative path inside
-/// the checkpoint root. sha256 values were verified against the HF CDN at
-/// the time of writing; re-verify if the repo is updated.
+/// (`ACE-Step/ACE-Step-v1-3.5B`). Each file lives at a known relative path
+/// inside the checkpoint root.
+///
+/// sha256 values for the LFS-backed `*.safetensors` and `tokenizer.json`
+/// files come from HF's `?blobs=true` API (the `lfs.sha256` field). Plain
+/// JSON configs were downloaded once and hashed locally. Total uncompressed
+/// footprint is ~7.7 GB — see `ACE_STEP_TOTAL_BYTES`.
+///
+/// Re-verify if the upstream repo is updated.
 pub fn ace_step_artifacts() -> &'static [ModelArtifact] {
     static ARTIFACTS: std::sync::OnceLock<Vec<ModelArtifact>> = std::sync::OnceLock::new();
     ARTIFACTS.get_or_init(|| {
@@ -45,46 +50,65 @@ pub fn ace_step_artifacts() -> &'static [ModelArtifact] {
             ModelArtifact {
                 url: format!("{base}/music_dcae_f8c8/config.json"),
                 relative_path: "music_dcae_f8c8/config.json".into(),
-                sha256: "placeholder_sha256_music_dcae_config".into(),
+                sha256: "b14a49a8c52a52c2c8050098af1a946810a8a1a0b6e50abc75ba81371383cf04".into(),
             },
             ModelArtifact {
-                url: format!("{base}/music_dcae_f8c8/model.safetensors"),
-                relative_path: "music_dcae_f8c8/model.safetensors".into(),
-                sha256: "placeholder_sha256_music_dcae_model".into(),
+                url: format!("{base}/music_dcae_f8c8/diffusion_pytorch_model.safetensors"),
+                relative_path: "music_dcae_f8c8/diffusion_pytorch_model.safetensors".into(),
+                sha256: "2b0cb469307ac50659d1880db2a99bae47d0df335cbb36853964662d4b80e8ee".into(),
             },
             ModelArtifact {
                 url: format!("{base}/music_vocoder/config.json"),
                 relative_path: "music_vocoder/config.json".into(),
-                sha256: "placeholder_sha256_music_vocoder_config".into(),
+                sha256: "39ddc4c417e01dc3be1862fcf315887358dd61b7f91c3cc8227f65072984bb55".into(),
             },
             ModelArtifact {
-                url: format!("{base}/music_vocoder/model.safetensors"),
-                relative_path: "music_vocoder/model.safetensors".into(),
-                sha256: "placeholder_sha256_music_vocoder_model".into(),
+                url: format!("{base}/music_vocoder/diffusion_pytorch_model.safetensors"),
+                relative_path: "music_vocoder/diffusion_pytorch_model.safetensors".into(),
+                sha256: "c92c9b46e28ab7b37b777780cf4308ad7ddac869636bb77aa61599358c4bc1c0".into(),
             },
             ModelArtifact {
                 url: format!("{base}/ace_step_transformer/config.json"),
                 relative_path: "ace_step_transformer/config.json".into(),
-                sha256: "placeholder_sha256_ace_step_transformer_config".into(),
+                sha256: "4d78beb6afb4c7f3705256b44faaf60f3e1e2d78f4015ca87740f3695d7f5447".into(),
             },
             ModelArtifact {
-                url: format!("{base}/ace_step_transformer/model.safetensors"),
-                relative_path: "ace_step_transformer/model.safetensors".into(),
-                sha256: "placeholder_sha256_ace_step_transformer_model".into(),
+                url: format!("{base}/ace_step_transformer/diffusion_pytorch_model.safetensors"),
+                relative_path: "ace_step_transformer/diffusion_pytorch_model.safetensors".into(),
+                sha256: "e810f16728d8a2e0d1b9c3a907aac8c9a427ce38edbd890cb3dce5ff92da5aad".into(),
             },
             ModelArtifact {
                 url: format!("{base}/umt5-base/config.json"),
                 relative_path: "umt5-base/config.json".into(),
-                sha256: "placeholder_sha256_umt5_base_config".into(),
+                sha256: "afae5da9a35e2b293cee66536f03fc2581cfc3f3d5707d3a262b552748de1572".into(),
+            },
+            ModelArtifact {
+                url: format!("{base}/umt5-base/model.safetensors"),
+                relative_path: "umt5-base/model.safetensors".into(),
+                sha256: "779cec0d210b2123e21d0a9cd8128f02b4d412627355028965a8be0b241cc3b6".into(),
             },
             ModelArtifact {
                 url: format!("{base}/umt5-base/tokenizer.json"),
                 relative_path: "umt5-base/tokenizer.json".into(),
-                sha256: "placeholder_sha256_umt5_base_tokenizer".into(),
+                sha256: "20a46ac256746594ed7e1e3ef733b83fbc5a6f0922aa7480eda961743de080ef".into(),
+            },
+            ModelArtifact {
+                url: format!("{base}/umt5-base/special_tokens_map.json"),
+                relative_path: "umt5-base/special_tokens_map.json".into(),
+                sha256: "456b58fd240a06c743a7c2cf8008bec501240d68ebd1fc4018ea569505fea270".into(),
+            },
+            ModelArtifact {
+                url: format!("{base}/umt5-base/tokenizer_config.json"),
+                relative_path: "umt5-base/tokenizer_config.json".into(),
+                sha256: "ed9a3a8b0faa71a70a32847e0435fe036e6e112d4df4edb7bb48a921e344dc05".into(),
             },
         ]
     })
 }
+
+/// Sum of `content-length` for all `ace_step_artifacts()` (~7.7 GB).
+/// Source of truth for download progress UIs that need a total.
+pub const ACE_STEP_TOTAL_BYTES: u64 = 8_275_790_207;
 
 pub struct AceStepGenerator {
     channel: IpcChannel,

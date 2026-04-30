@@ -11,7 +11,8 @@ pub mod protocol;
 pub mod subprocess;
 
 pub use ace_step::{
-    ACE_STEP_GENERATOR_ID, ACE_STEP_GENERATOR_VERSION, AceStepGenerator, ace_step_artifacts,
+    ACE_STEP_GENERATOR_ID, ACE_STEP_GENERATOR_VERSION, ACE_STEP_TOTAL_BYTES, AceStepGenerator,
+    ace_step_artifacts,
 };
 pub use hf_download::CancellationToken;
 pub use model_install::{InstallMode, ModelArtifact, ensure_model};

@@ -1,11 +1,12 @@
 # Current state
 
-**Date**: 2026-04-29
+**Date**: 2026-04-30
 **Phase**: Phase 1d2 (real ACE-Step wired into the Swift app + first-launch
-model setup sheet) complete on `main` — Rust + Swift build green, audible
-verification of the new real-model + use-existing paths owed by user (the
-existing mock-path regression should still produce the 440 Hz sine at 16 Hz).
-Phase 1e (background buffer queue) not yet started.
+model setup sheet) complete on `main`, plus the sha256/manifest bootstrap
+follow-up — Rust + Swift build green, audible verification of the new
+real-model + use-existing paths owed by user (the existing mock-path
+regression should still produce the 440 Hz sine at 16 Hz). Phase 1e
+(background buffer queue) not yet started.
 **Build status**: `cargo test --workspace` green (71 passed / 2
 ignored). `cargo clippy --all-targets -- -D warnings` clean (pedantic).
 `cargo fmt --check` clean. `make ffi` regenerates the cbindgen header
@@ -41,8 +42,12 @@ report at [`phases/phase-1d2-real-ace-step-report.md`](phases/phase-1d2-real-ace
 **Manual verification owed** (user, on macOS): `defaults delete com.telaradio.Telaradio`
 to clear settings, then `make app-run`. Sheet should appear; "Use mock
 for now" should regress cleanly to the 1d MVL behavior. Real-model
-"Use existing folder" path requires real sha256s in
-`ace_step.rs::ace_step_artifacts()` — that's the next-step bootstrap.
+"Use existing folder" + "Download" paths are now unblocked: real sha256s
+landed via the HF `?blobs=true` API (no full download required), the
+safetensors filenames were corrected (`diffusion_pytorch_model.safetensors`,
+not `model.safetensors`), three previously-missing umt5-base files were
+added, and the ~7.7 GB total is exposed via `tr_ace_step_total_bytes()`
+so the Swift progress bar reads from a single source of truth.
 
 ### Earlier in the session: Phase 1d MVL
 
@@ -134,10 +139,6 @@ None.
 
 ## What does NOT exist yet
 
-- Real sha256 checksums in `ace_step::ace_step_artifacts()` — placeholders
-  until the one-time HF download bootstrap. Without this, both the
-  Download path and the Use-existing path fail validation. See report
-  for the procedure.
 - File picker for arbitrary recipes (Phase 1g or sooner if felt)
 - Background buffer queue (Phase 1e)
 - Settings UI: preset / 3-tier / advanced (Phase 1g) — also where a

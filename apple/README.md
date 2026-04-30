@@ -44,11 +44,11 @@ make app-run  # both, then launches the Telaradio executable
 
 Reset the first-launch flow with `defaults delete com.telaradio.Telaradio`.
 
-**Phase 1d2 caveat**: `ace_step_artifacts()` ships with placeholder
-sha256s. Until the one-time HF-download bootstrap fills them in, both
-the Download and Use-existing paths fail validation. The mock path
-works regardless. See `.docs/ai/next-steps.md` for the bootstrap
-procedure.
+The artifact manifest at `model-adapter/src/ace_step.rs::ace_step_artifacts()`
+ships with real sha256s sourced from the Hugging Face `?blobs=true` API
+(no full download needed). Total footprint is ~7.7 GB; the exact byte count
+lives in `ACE_STEP_TOTAL_BYTES` and is exposed to Swift via
+`tr_ace_step_total_bytes()`.
 
 File picker for arbitrary recipes, background buffer queue, settings
 panel, and download cancellation UX land in later phases. Phase 3

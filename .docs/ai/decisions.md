@@ -19,19 +19,26 @@ Each entry: date, decision, rationale, what it supersedes (if anything).
    prompt parser) updated. Cleaner than introducing a new variant or
    a parallel function.
 
-3. **Placeholder sha256s in `ace_step_artifacts()`.** Real values require
-   downloading ~5 GB once to compute. Phase 1d2 ships with placeholders;
-   replacing them is a tracked one-time bootstrap. Code is correct so
-   that filling in checksums is the only remaining blocker for
-   end-to-end real-model verification. Use-existing path is gated on
-   sha256 match — same blocker as Download.
+3. **Real sha256s sourced from HF API, not from a local download.**
+   Phase 1d2 originally shipped with placeholder strings; the bootstrap
+   follow-up (2026-04-30) replaced them via Hugging Face's
+   `?blobs=true` API, which exposes `lfs.sha256` for every LFS file.
+   Only the small JSON configs (~80 KB total) had to be downloaded and
+   hashed locally. Total avoided download: ~7.7 GB. While verifying the
+   manifest, three pre-existing bugs surfaced and were fixed: the
+   safetensors filenames were `model.safetensors` (should be
+   `diffusion_pytorch_model.safetensors`); the umt5-base text encoder
+   was missing `model.safetensors`, `special_tokens_map.json`, and
+   `tokenizer_config.json`; manifest count went 8 → 11.
 
-4. **Total-bytes hardcoded in Swift, not exposed via FFI.** Step 2 used
-   `aceStepTotalBytes: UInt64 = 5_000_000_000` rather than adding a
-   `tr_ace_step_total_bytes()` helper. Once real artifact sizes are
-   known, swap to a sum-of-artifacts FFI helper without breaking the
-   Swift surface. Progress fraction clamps to `[0.0, 1.0]` so an
-   inaccurate estimate produces correct UI.
+4. **`tr_ace_step_total_bytes()` exposed via FFI.** Phase 1d2 originally
+   hardcoded `aceStepTotalBytes: UInt64 = 5_000_000_000` in Swift (well
+   below the real ~7.7 GB). Bootstrap follow-up added
+   `pub const ACE_STEP_TOTAL_BYTES: u64 = 8_275_790_207` in
+   `model-adapter/src/ace_step.rs` and exposed it through the FFI as
+   `tr_ace_step_total_bytes() -> u64`. Single source of truth for the
+   download progress UI denominator; no risk of drift between Rust and
+   Swift sides.
 
 5. **Progress callback dispatches to `MainActor` inside the C bridge.**
    The download fires the C callback dozens of times per second on the

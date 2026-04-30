@@ -111,17 +111,39 @@ mismatch ld warnings unchanged from Phase 1d)
       first → sheet appears with three buttons.
 - [ ] **(USER)** "Use mock for now" → sheet dismisses, Play still
       produces the 440 Hz sine modulated at 16 Hz (regression check).
-- [ ] **(USER, optional)** "Use existing folder" → expected to fail
-      sha256 validation against any folder until Step 1's placeholder
-      checksums are replaced with real values (see follow-ups).
+- [ ] **(USER, optional)** "Use existing folder" against a real ACE-Step
+      checkpoint → sheet dismisses, Play generates real audio modulated
+      at 16 Hz. Now unblocked — see "Bootstrap follow-up landed" below.
+
+## Bootstrap follow-up landed (2026-04-30)
+
+The placeholder-sha256 caveat is now resolved. Original Step 1 sha256s
+were placeholder strings; this session replaced them with real values
+**without** doing a 7.7 GB download by reading them from HF's
+`?blobs=true` API (the `lfs.sha256` field). The non-LFS JSON configs
+(~80 KB total) were downloaded and hashed locally.
+
+While verifying the manifest, three additional bugs surfaced:
+
+1. The safetensors filenames in `ace_step_artifacts()` were wrong —
+   they're `diffusion_pytorch_model.safetensors`, not `model.safetensors`.
+   The placeholder URLs would have 404'd even if the sha256s had been
+   real.
+2. The umt5-base text encoder was missing its `model.safetensors`
+   (1.13 GB) plus `special_tokens_map.json` and `tokenizer_config.json`.
+   The `transformers` library would have failed to load the encoder
+   without these.
+3. The Swift `aceStepTotalBytes` constant was hardcoded to `5_000_000_000`
+   — well below the real ~7.7 GB total. Replaced with a call to a new
+   FFI export `tr_ace_step_total_bytes()` backed by the new
+   `ACE_STEP_TOTAL_BYTES` constant in `ace_step.rs` (8_275_790_207 bytes).
+
+Net diff: 11 artifacts in the manifest (was 8), real sha256s for all,
+correct URLs, and a single source of truth for the total byte count.
+All quality gates green afterward (cargo test/clippy/fmt + make swift).
 
 ## Follow-up items
 
-- [ ] **Replace placeholder sha256s in `model-adapter/src/ace_step.rs`**
-      with real values. One-time bootstrap: download ACE-Step v1 3.5B
-      once via `huggingface_hub`, compute `sha256sum` over each artifact,
-      paste the hex strings into `ace_step_artifacts()`. After this,
-      both Download and Use-existing paths work end-to-end.
 - [ ] **Reconcile the macOS deployment target mismatch between Rust and
       Swift.** Pre-existing `ld: warning: object file ... was built for
       newer 'macOS' version (26.0) than being linked (13.0)` — Rust

@@ -157,6 +157,13 @@ void tr_cancel_token_cancel(struct TrCancelToken *token);
 void tr_cancel_token_free(struct TrCancelToken *token);
 
 /**
+ * Total bytes the ACE-Step model footprint occupies once
+ * [`tr_ensure_model_download`] finishes. UI code can use this as the
+ * denominator for a download progress bar.
+ */
+uint64_t tr_ace_step_total_bytes(void);
+
+/**
  * Free a C string previously returned by [`tr_ensure_model_download`] or
  * [`tr_ensure_model_use_existing`]. Safe to call on null (no-op).
  *

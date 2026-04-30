@@ -9,8 +9,7 @@ If you find yourself updating one but not the other, fix it now.
 Active items. Trim as completed.
 
 ### Now
-- **Bootstrap real ACE-Step sha256s** — Phase 1d2 shipped with placeholder sha256s in `model-adapter/src/ace_step.rs::ace_step_artifacts()`. Until real values land, both Download and Use-existing paths in the SwiftUI sheet fail validation. Fix: download ACE-Step v1 3.5B once (`huggingface-cli download ACE-Step/ACE-Step-v1-3.5B --local-dir /tmp/ace`), `sha256sum` each artifact listed in `ace_step_artifacts()`, paste hex strings, commit. **Tier hint**: Sonnet — bounded mechanical work.
-- **Confirm Phase 1d2 audibly** — `defaults delete com.telaradio.Telaradio` (clears UserDefaults), then `make app-run`. Verify (1) first-launch sheet appears with three buttons; (2) "Use mock for now" + Play produces the 1d MVL sine; (3) re-clear UserDefaults, "Use existing folder" + Play generates real audio modulated at 16 Hz.
+- **Confirm Phase 1d2 audibly** — `defaults delete com.telaradio.Telaradio` (clears UserDefaults), then `make app-run`. Verify (1) first-launch sheet appears with three buttons; (2) "Use mock for now" + Play produces the 1d MVL sine; (3) re-clear UserDefaults, "Use existing folder" + Play generates real audio modulated at 16 Hz. **Real sha256s landed in `ace_step_artifacts()`**, plus the manifest now includes the previously-missing `umt5-base/model.safetensors`, `special_tokens_map.json`, and `tokenizer_config.json` and corrects the safetensors filenames to `diffusion_pytorch_model.safetensors`. ~7.7 GB total footprint surfaced via `tr_ace_step_total_bytes()`.
 
 ### Next
 - **Phase 1e — background buffer queue.** Real ACE-Step has ~10 s cold-start latency on consumer hardware. Keep 2–3 tracks pre-generated and modulated ahead of the user during idle. Hooks in at the `Telaradio.generateAceStep(...)` seam — no FFI changes needed.
