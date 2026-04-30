@@ -16,6 +16,9 @@ telaradio-core.workspace = true
 telaradio-dsp.workspace = true
 telaradio-model-adapter.workspace = true
 
+[dev-dependencies]
+tempfile.workspace = true
+
 [build-dependencies]
 cbindgen.workspace = true
 

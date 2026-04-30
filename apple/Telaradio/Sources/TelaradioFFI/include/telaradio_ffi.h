@@ -18,6 +18,12 @@ typedef struct TrWavBuffer TrWavBuffer;
 
 
 /**
+ * Opaque cancel token exposed to C callers. Wraps a [`CancellationToken`]
+ * which is `Arc<AtomicBool>`-backed and cheap to clone.
+ */
+typedef struct TrCancelToken TrCancelToken;
+
+/**
  * Returns the last error message set by an FFI call on this thread, or
  * null if no error is pending. The pointer is owned by the FFI; do not
  * free. Successful calls clear this; subsequent reads will see null
@@ -123,5 +129,100 @@ uint32_t tr_wavbuffer_sample_rate(const TrWavBuffer *buffer);
  * `buffer` must be a valid `WavBuffer` pointer or null.
  */
 uint8_t tr_wavbuffer_channels(const TrWavBuffer *buffer);
+
+/**
+ * Allocate a new cancellation token. Never returns null.
+ *
+ * The returned pointer is owned by the caller; free with
+ * [`tr_cancel_token_free`].
+ */
+struct TrCancelToken *tr_cancel_token_new(void);
+
+/**
+ * Signal cancellation on `token`. Safe to call on null (no-op).
+ *
+ * # Safety
+ * `token` must be a valid pointer returned by [`tr_cancel_token_new`]
+ * and not yet freed, or null.
+ */
+void tr_cancel_token_cancel(struct TrCancelToken *token);
+
+/**
+ * Free a cancel token. Safe to call on null (no-op).
+ *
+ * # Safety
+ * `token` must be a pointer returned by [`tr_cancel_token_new`] and not
+ * yet freed, or null.
+ */
+void tr_cancel_token_free(struct TrCancelToken *token);
+
+/**
+ * Free a C string previously returned by [`tr_ensure_model_download`] or
+ * [`tr_ensure_model_use_existing`]. Safe to call on null (no-op).
+ *
+ * **The returned strings from `tr_ensure_model_*` MUST be freed via this
+ * function.** Do not pass them to C's `free()` — Rust's allocator must
+ * reclaim them.
+ *
+ * # Safety
+ * `ptr` must be a `*mut c_char` returned by one of the `tr_ensure_model_*`
+ * functions and not yet freed, or null.
+ */
+void tr_string_free(char *ptr);
+
+/**
+ * Download the ACE-Step model artifacts into `install_dir`, resuming any
+ * partial download. Returns the install directory as a NUL-terminated C
+ * string on success; the caller must free it with [`tr_string_free`].
+ * Returns null on failure; call [`tr_last_error`] for the reason.
+ *
+ * **Thread-safety contract for `progress_cb`:** the callback fires on
+ * whatever OS thread the blocking download runs on — *not* the calling
+ * thread. Swift callers must marshal back to the main actor inside the
+ * callback (e.g. `Task { @MainActor in … }`). The `ctx` pointer is passed
+ * through opaquely; Rust never dereferences it, but it must remain valid
+ * for the duration of the call.
+ *
+ * # Safety
+ * - `install_dir` must be a valid NUL-terminated UTF-8 C string.
+ * - `ctx` is caller-managed; see thread-safety note above.
+ * - `cancel` must be a valid [`TrCancelToken`] pointer or null.
+ */
+char *tr_ensure_model_download(const char *install_dir,
+                               void (*progress_cb)(void*, uint64_t),
+                               void *ctx,
+                               const struct TrCancelToken *cancel);
+
+/**
+ * Copy model weights from an existing local directory into `install_dir`,
+ * validating sha256 checksums. Returns the install directory as a
+ * NUL-terminated C string on success; the caller must free it with
+ * [`tr_string_free`]. Returns null on failure; call [`tr_last_error`] for
+ * the reason.
+ *
+ * # Safety
+ * `install_dir` and `source_dir` must be valid NUL-terminated UTF-8 C
+ * strings.
+ */
+char *tr_ensure_model_use_existing(const char *install_dir, const char *source_dir);
+
+/**
+ * Run ACE-Step generation from a resolved model directory. Spawns the
+ * ACE-Step Python subprocess, generates audio, and drops the subprocess.
+ *
+ * Yes, this incurs subprocess startup per call (~few seconds). Phase 1e
+ * (background buffer queue) will add a persistent subprocess; this
+ * spawn-use-drop pattern is the minimal correct path for Phase 1d2.
+ *
+ * Returns an owned `WavBuffer`; the caller must free it with
+ * [`tr_wavbuffer_free`]. Returns null on failure; call [`tr_last_error`].
+ *
+ * # Safety
+ * `model_dir` and `prompt` must be valid NUL-terminated UTF-8 C strings.
+ */
+TrWavBuffer *tr_generate_ace_step(const char *model_dir,
+                                  const char *prompt,
+                                  uint64_t seed,
+                                  uint32_t duration_seconds);
 
 #endif  /* TELARADIO_FFI_H */

@@ -38,8 +38,10 @@ pub struct ModelArtifact {
 /// How `ensure_model` should populate the install dir.
 pub enum InstallMode {
     /// Download from Hugging Face. Optional progress callback fires per
-    /// chunk per file; cumulative bytes per file (not aggregated).
-    Download(Option<ProgressCallback>),
+    /// chunk per file; cumulative bytes per file (not aggregated). Optional
+    /// cancel token allows the caller to interrupt the download; if `None`,
+    /// a fresh uncancellable token is used.
+    Download(Option<ProgressCallback>, Option<CancellationToken>),
 
     /// Copy from an existing local directory. Each artifact's
     /// `relative_path` is read from this source dir.
@@ -75,8 +77,8 @@ pub fn ensure_model(
     }
 
     match mode {
-        InstallMode::Download(mut progress) => {
-            let cancel = CancellationToken::new();
+        InstallMode::Download(mut progress, cancel_opt) => {
+            let cancel = cancel_opt.unwrap_or_default();
             for artifact in artifacts {
                 let dest = install_dir.join(&artifact.relative_path);
                 if let Some(parent) = dest.parent() {
@@ -154,7 +156,7 @@ pub fn prompt_install_mode_cli<R: BufRead, W: Write>(
     let trimmed = line.trim();
 
     if trimmed.eq_ignore_ascii_case("download") {
-        return Ok(InstallMode::Download(None));
+        return Ok(InstallMode::Download(None, None));
     }
     if let Some(rest) = trimmed
         .strip_prefix("use existing ")

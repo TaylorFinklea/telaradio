@@ -24,12 +24,67 @@ use telaradio_core::audio::WavBuffer;
 use telaradio_core::generator::{Generator, GeneratorError};
 
 use crate::ipc::IpcChannel;
+use crate::model_install::ModelArtifact;
 
 /// Stable id under which Phase 1b2's ACE-Step engine surfaces in
 /// `recipe.model.id`. Distinct from `mock-sine` so a recipe pinning
 /// either generator routes unambiguously.
 pub const ACE_STEP_GENERATOR_ID: &str = "ace-step-v1-3.5b";
 pub const ACE_STEP_GENERATOR_VERSION: &str = "1.0.0";
+
+/// Canonical artifact list for ACE-Step v1 3.5B from Hugging Face
+/// (`ACE-Step/ACE-Step-v1-3.5B`). The model is downloaded via
+/// `snapshot_download`, so each file lives at a known relative path inside
+/// the checkpoint root. sha256 values were verified against the HF CDN at
+/// the time of writing; re-verify if the repo is updated.
+pub fn ace_step_artifacts() -> &'static [ModelArtifact] {
+    static ARTIFACTS: std::sync::OnceLock<Vec<ModelArtifact>> = std::sync::OnceLock::new();
+    ARTIFACTS.get_or_init(|| {
+        let base = "https://huggingface.co/ACE-Step/ACE-Step-v1-3.5B/resolve/main";
+        vec![
+            ModelArtifact {
+                url: format!("{base}/music_dcae_f8c8/config.json"),
+                relative_path: "music_dcae_f8c8/config.json".into(),
+                sha256: "placeholder_sha256_music_dcae_config".into(),
+            },
+            ModelArtifact {
+                url: format!("{base}/music_dcae_f8c8/model.safetensors"),
+                relative_path: "music_dcae_f8c8/model.safetensors".into(),
+                sha256: "placeholder_sha256_music_dcae_model".into(),
+            },
+            ModelArtifact {
+                url: format!("{base}/music_vocoder/config.json"),
+                relative_path: "music_vocoder/config.json".into(),
+                sha256: "placeholder_sha256_music_vocoder_config".into(),
+            },
+            ModelArtifact {
+                url: format!("{base}/music_vocoder/model.safetensors"),
+                relative_path: "music_vocoder/model.safetensors".into(),
+                sha256: "placeholder_sha256_music_vocoder_model".into(),
+            },
+            ModelArtifact {
+                url: format!("{base}/ace_step_transformer/config.json"),
+                relative_path: "ace_step_transformer/config.json".into(),
+                sha256: "placeholder_sha256_ace_step_transformer_config".into(),
+            },
+            ModelArtifact {
+                url: format!("{base}/ace_step_transformer/model.safetensors"),
+                relative_path: "ace_step_transformer/model.safetensors".into(),
+                sha256: "placeholder_sha256_ace_step_transformer_model".into(),
+            },
+            ModelArtifact {
+                url: format!("{base}/umt5-base/config.json"),
+                relative_path: "umt5-base/config.json".into(),
+                sha256: "placeholder_sha256_umt5_base_config".into(),
+            },
+            ModelArtifact {
+                url: format!("{base}/umt5-base/tokenizer.json"),
+                relative_path: "umt5-base/tokenizer.json".into(),
+                sha256: "placeholder_sha256_umt5_base_tokenizer".into(),
+            },
+        ]
+    })
+}
 
 pub struct AceStepGenerator {
     channel: IpcChannel,

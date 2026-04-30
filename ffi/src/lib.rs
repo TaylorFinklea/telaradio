@@ -19,7 +19,7 @@
 #![allow(clippy::missing_safety_doc)]
 
 use std::cell::RefCell;
-use std::ffi::{CStr, CString, c_char};
+use std::ffi::{CStr, CString, c_char, c_void};
 use std::path::Path;
 use std::ptr;
 
@@ -27,7 +27,39 @@ use telaradio_core::Recipe;
 use telaradio_core::audio::WavBuffer;
 use telaradio_core::generator::Generator;
 use telaradio_dsp::{Envelope, apply_am};
-use telaradio_model_adapter::SubprocessGenerator;
+use telaradio_model_adapter::{
+    AceStepGenerator, CancellationToken, InstallMode, SubprocessGenerator, ace_step_artifacts,
+    ensure_model,
+};
+
+/// Opaque cancel token exposed to C callers. Wraps a [`CancellationToken`]
+/// which is `Arc<AtomicBool>`-backed and cheap to clone.
+pub struct TrCancelToken(CancellationToken);
+
+/// A `*mut c_void` context pointer is not `Send` by default because Rust
+/// cannot verify the pointed-to data is safe to share across threads.
+/// Here the pointer is opaque to Rust — we never dereference it, we only
+/// pass it back to the caller's C callback on whatever thread the download
+/// happens to run on. The caller is responsible for ensuring the pointed-to
+/// data is thread-safe (e.g. a Swift actor-isolated object captured with
+/// `Unmanaged.passRetained`). We document this contract on the public FFI
+/// functions that accept it.
+#[derive(Copy, Clone)]
+struct CtxPtr(*mut c_void);
+
+// SAFETY: see the WHY comment on `CtxPtr` above — opaque, never dereferenced.
+unsafe impl Send for CtxPtr {}
+
+/// Call the optional C progress callback. Keeping the extraction of the raw
+/// pointer in a dedicated function prevents the closure that captures
+/// `ctx_wrapped: CtxPtr` from having a `*mut c_void` as a direct capture
+/// (which would make the closure non-`Send`).
+#[allow(clippy::missing_safety_doc)]
+unsafe fn call_progress_cb(cb: unsafe extern "C" fn(*mut c_void, u64), ctx: CtxPtr, bytes: u64) {
+    let CtxPtr(raw) = ctx;
+    // SAFETY: caller guarantees `raw` is valid for the duration of the call.
+    unsafe { cb(raw, bytes) };
+}
 
 thread_local! {
     static LAST_ERROR: RefCell<Option<CString>> = const { RefCell::new(None) };
@@ -271,4 +303,278 @@ pub unsafe extern "C" fn tr_wavbuffer_channels(buffer: *const WavBuffer) -> u8 {
         return 0;
     }
     unsafe { (*buffer).channels }
+}
+
+// ── Cancel token ─────────────────────────────────────────────────────────────
+
+/// Allocate a new cancellation token. Never returns null.
+///
+/// The returned pointer is owned by the caller; free with
+/// [`tr_cancel_token_free`].
+#[unsafe(no_mangle)]
+pub extern "C" fn tr_cancel_token_new() -> *mut TrCancelToken {
+    Box::into_raw(Box::new(TrCancelToken(CancellationToken::new())))
+}
+
+/// Signal cancellation on `token`. Safe to call on null (no-op).
+///
+/// # Safety
+/// `token` must be a valid pointer returned by [`tr_cancel_token_new`]
+/// and not yet freed, or null.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn tr_cancel_token_cancel(token: *mut TrCancelToken) {
+    if !token.is_null() {
+        unsafe { (*token).0.cancel() };
+    }
+}
+
+/// Free a cancel token. Safe to call on null (no-op).
+///
+/// # Safety
+/// `token` must be a pointer returned by [`tr_cancel_token_new`] and not
+/// yet freed, or null.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn tr_cancel_token_free(token: *mut TrCancelToken) {
+    if !token.is_null() {
+        drop(unsafe { Box::from_raw(token) });
+    }
+}
+
+// ── Model install ─────────────────────────────────────────────────────────────
+
+/// Free a C string previously returned by [`tr_ensure_model_download`] or
+/// [`tr_ensure_model_use_existing`]. Safe to call on null (no-op).
+///
+/// **The returned strings from `tr_ensure_model_*` MUST be freed via this
+/// function.** Do not pass them to C's `free()` — Rust's allocator must
+/// reclaim them.
+///
+/// # Safety
+/// `ptr` must be a `*mut c_char` returned by one of the `tr_ensure_model_*`
+/// functions and not yet freed, or null.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn tr_string_free(ptr: *mut c_char) {
+    if !ptr.is_null() {
+        drop(unsafe { CString::from_raw(ptr) });
+    }
+}
+
+/// Download the ACE-Step model artifacts into `install_dir`, resuming any
+/// partial download. Returns the install directory as a NUL-terminated C
+/// string on success; the caller must free it with [`tr_string_free`].
+/// Returns null on failure; call [`tr_last_error`] for the reason.
+///
+/// **Thread-safety contract for `progress_cb`:** the callback fires on
+/// whatever OS thread the blocking download runs on — *not* the calling
+/// thread. Swift callers must marshal back to the main actor inside the
+/// callback (e.g. `Task { @MainActor in … }`). The `ctx` pointer is passed
+/// through opaquely; Rust never dereferences it, but it must remain valid
+/// for the duration of the call.
+///
+/// # Safety
+/// - `install_dir` must be a valid NUL-terminated UTF-8 C string.
+/// - `ctx` is caller-managed; see thread-safety note above.
+/// - `cancel` must be a valid [`TrCancelToken`] pointer or null.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn tr_ensure_model_download(
+    install_dir: *const c_char,
+    progress_cb: Option<unsafe extern "C" fn(*mut c_void, u64)>,
+    ctx: *mut c_void,
+    cancel: *const TrCancelToken,
+) -> *mut c_char {
+    if install_dir.is_null() {
+        set_error("tr_ensure_model_download: install_dir is null");
+        return ptr::null_mut();
+    }
+    let dir_str = match unsafe { CStr::from_ptr(install_dir) }.to_str() {
+        Ok(s) => s,
+        Err(e) => {
+            set_error(format!(
+                "tr_ensure_model_download: invalid UTF-8 in install_dir: {e}"
+            ));
+            return ptr::null_mut();
+        }
+    };
+
+    let ctx_wrapped = CtxPtr(ctx);
+    let progress: Option<telaradio_model_adapter::hf_download::ProgressCallback> =
+        progress_cb.map(|cb| {
+            // Capture `ctx_wrapped: CtxPtr` (which is `Send`) so the closure
+            // satisfies `Box<dyn FnMut(u64) + Send>`. We call a helper that
+            // unwraps it in a way that stays within the `CtxPtr` type boundary.
+            let f: telaradio_model_adapter::hf_download::ProgressCallback =
+                Box::new(move |bytes: u64| {
+                    // SAFETY: ctx_wrapped is opaque; we only hand it back to
+                    // the C callback. The caller owns the pointed-to memory.
+                    unsafe { call_progress_cb(cb, ctx_wrapped, bytes) };
+                });
+            f
+        });
+
+    let cancel_token = if cancel.is_null() {
+        None
+    } else {
+        // Clone the token so the caller's token outlives this call.
+        Some(unsafe { (*cancel).0.clone() })
+    };
+
+    let artifacts = ace_step_artifacts();
+    match ensure_model(
+        Path::new(dir_str),
+        artifacts,
+        InstallMode::Download(progress, cancel_token),
+    ) {
+        Ok(path) => {
+            let Some(path_str) = path.to_str() else {
+                set_error("tr_ensure_model_download: install path is not valid UTF-8");
+                return ptr::null_mut();
+            };
+            match CString::new(path_str) {
+                Ok(cs) => {
+                    clear_error();
+                    cs.into_raw()
+                }
+                Err(e) => {
+                    set_error(format!(
+                        "tr_ensure_model_download: path contains NUL byte: {e}"
+                    ));
+                    ptr::null_mut()
+                }
+            }
+        }
+        Err(e) => {
+            set_error(format!("tr_ensure_model_download: {e}"));
+            ptr::null_mut()
+        }
+    }
+}
+
+/// Copy model weights from an existing local directory into `install_dir`,
+/// validating sha256 checksums. Returns the install directory as a
+/// NUL-terminated C string on success; the caller must free it with
+/// [`tr_string_free`]. Returns null on failure; call [`tr_last_error`] for
+/// the reason.
+///
+/// # Safety
+/// `install_dir` and `source_dir` must be valid NUL-terminated UTF-8 C
+/// strings.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn tr_ensure_model_use_existing(
+    install_dir: *const c_char,
+    source_dir: *const c_char,
+) -> *mut c_char {
+    if install_dir.is_null() || source_dir.is_null() {
+        set_error("tr_ensure_model_use_existing: null argument");
+        return ptr::null_mut();
+    }
+    let dir_str = match unsafe { CStr::from_ptr(install_dir) }.to_str() {
+        Ok(s) => s,
+        Err(e) => {
+            set_error(format!(
+                "tr_ensure_model_use_existing: invalid UTF-8 in install_dir: {e}"
+            ));
+            return ptr::null_mut();
+        }
+    };
+    let src_str = match unsafe { CStr::from_ptr(source_dir) }.to_str() {
+        Ok(s) => s,
+        Err(e) => {
+            set_error(format!(
+                "tr_ensure_model_use_existing: invalid UTF-8 in source_dir: {e}"
+            ));
+            return ptr::null_mut();
+        }
+    };
+
+    let artifacts = ace_step_artifacts();
+    match ensure_model(
+        Path::new(dir_str),
+        artifacts,
+        InstallMode::UseExisting(Path::new(src_str).to_owned()),
+    ) {
+        Ok(path) => {
+            let Some(path_str) = path.to_str() else {
+                set_error("tr_ensure_model_use_existing: install path is not valid UTF-8");
+                return ptr::null_mut();
+            };
+            match CString::new(path_str) {
+                Ok(cs) => {
+                    clear_error();
+                    cs.into_raw()
+                }
+                Err(e) => {
+                    set_error(format!(
+                        "tr_ensure_model_use_existing: path contains NUL byte: {e}"
+                    ));
+                    ptr::null_mut()
+                }
+            }
+        }
+        Err(e) => {
+            set_error(format!("tr_ensure_model_use_existing: {e}"));
+            ptr::null_mut()
+        }
+    }
+}
+
+// ── ACE-Step generation ───────────────────────────────────────────────────────
+
+/// Run ACE-Step generation from a resolved model directory. Spawns the
+/// ACE-Step Python subprocess, generates audio, and drops the subprocess.
+///
+/// Yes, this incurs subprocess startup per call (~few seconds). Phase 1e
+/// (background buffer queue) will add a persistent subprocess; this
+/// spawn-use-drop pattern is the minimal correct path for Phase 1d2.
+///
+/// Returns an owned `WavBuffer`; the caller must free it with
+/// [`tr_wavbuffer_free`]. Returns null on failure; call [`tr_last_error`].
+///
+/// # Safety
+/// `model_dir` and `prompt` must be valid NUL-terminated UTF-8 C strings.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn tr_generate_ace_step(
+    model_dir: *const c_char,
+    prompt: *const c_char,
+    seed: u64,
+    duration_seconds: u32,
+) -> *mut WavBuffer {
+    if model_dir.is_null() || prompt.is_null() {
+        set_error("tr_generate_ace_step: null argument");
+        return ptr::null_mut();
+    }
+    let dir_str = match unsafe { CStr::from_ptr(model_dir) }.to_str() {
+        Ok(s) => s,
+        Err(e) => {
+            set_error(format!(
+                "tr_generate_ace_step: invalid UTF-8 in model_dir: {e}"
+            ));
+            return ptr::null_mut();
+        }
+    };
+    let prompt_str = match unsafe { CStr::from_ptr(prompt) }.to_str() {
+        Ok(s) => s,
+        Err(e) => {
+            set_error(format!(
+                "tr_generate_ace_step: invalid UTF-8 in prompt: {e}"
+            ));
+            return ptr::null_mut();
+        }
+    };
+    let generator = match AceStepGenerator::spawn(Path::new(dir_str)) {
+        Ok(g) => g,
+        Err(e) => {
+            set_error(format!("tr_generate_ace_step: spawn: {e}"));
+            return ptr::null_mut();
+        }
+    };
+    match generator.generate(prompt_str, seed, duration_seconds) {
+        Ok(buf) => {
+            clear_error();
+            Box::into_raw(Box::new(buf))
+        }
+        Err(e) => {
+            set_error(format!("tr_generate_ace_step: generate: {e}"));
+            ptr::null_mut()
+        }
+    }
 }

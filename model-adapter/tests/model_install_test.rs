@@ -38,7 +38,7 @@ fn download_mode_writes_artifact_and_manifest() {
 
     let artifacts = vec![artifact_for(&server)];
     let result =
-        ensure_model(&install_dir, &artifacts, InstallMode::Download(None)).expect("install");
+        ensure_model(&install_dir, &artifacts, InstallMode::Download(None, None)).expect("install");
 
     mock.assert();
     assert_eq!(result, install_dir);
@@ -63,8 +63,10 @@ fn second_call_is_idempotent_when_manifest_validates() {
     let install_dir = dir.path().join("ace-step");
     let artifacts = vec![artifact_for(&server)];
 
-    ensure_model(&install_dir, &artifacts, InstallMode::Download(None)).expect("first install");
-    ensure_model(&install_dir, &artifacts, InstallMode::Download(None)).expect("second install");
+    ensure_model(&install_dir, &artifacts, InstallMode::Download(None, None))
+        .expect("first install");
+    ensure_model(&install_dir, &artifacts, InstallMode::Download(None, None))
+        .expect("second install");
 
     // First call hits the mock; second should not (manifest is valid).
     assert_eq!(mock.hits(), 1);
@@ -118,7 +120,8 @@ fn corrupt_existing_manifest_triggers_redownload() {
     let install_dir = dir.path().join("ace-step");
     let artifacts = vec![artifact_for(&server)];
 
-    ensure_model(&install_dir, &artifacts, InstallMode::Download(None)).expect("first install");
+    ensure_model(&install_dir, &artifacts, InstallMode::Download(None, None))
+        .expect("first install");
 
     // Corrupt the artifact on disk and remove the model file partially.
     {
@@ -130,7 +133,7 @@ fn corrupt_existing_manifest_triggers_redownload() {
         f.write_all(b"junk").expect("write junk");
     }
 
-    ensure_model(&install_dir, &artifacts, InstallMode::Download(None)).expect("recover");
+    ensure_model(&install_dir, &artifacts, InstallMode::Download(None, None)).expect("recover");
 
     assert_eq!(
         fs::read(install_dir.join("model.safetensors")).expect("read model"),
@@ -145,7 +148,7 @@ fn prompt_parses_download_answer() {
     let mut input = b"download\n".as_slice();
     let mut output: Vec<u8> = Vec::new();
     let mode = prompt_install_mode_cli(&mut input, &mut output).expect("prompt");
-    assert!(matches!(mode, InstallMode::Download(None)));
+    assert!(matches!(mode, InstallMode::Download(None, None)));
     let prompt = String::from_utf8(output).expect("utf8");
     assert!(prompt.contains("download"));
 }
@@ -159,7 +162,7 @@ fn prompt_parses_use_existing_answer() {
         InstallMode::UseExisting(path) => {
             assert_eq!(path, std::path::PathBuf::from("/tmp/model"));
         }
-        InstallMode::Download(_) => panic!("expected UseExisting"),
+        InstallMode::Download(..) => panic!("expected UseExisting"),
     }
 }
 

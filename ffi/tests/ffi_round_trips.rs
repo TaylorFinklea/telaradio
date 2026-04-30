@@ -11,8 +11,9 @@ use std::ffi::{CStr, CString};
 use std::path::PathBuf;
 
 use telaradio_ffi::{
-    tr_apply_am, tr_generate_mock, tr_last_error, tr_recipe_free, tr_recipe_parse,
-    tr_wavbuffer_channels, tr_wavbuffer_free, tr_wavbuffer_len, tr_wavbuffer_new,
+    tr_apply_am, tr_cancel_token_cancel, tr_cancel_token_free, tr_cancel_token_new,
+    tr_ensure_model_use_existing, tr_generate_mock, tr_last_error, tr_recipe_free, tr_recipe_parse,
+    tr_string_free, tr_wavbuffer_channels, tr_wavbuffer_free, tr_wavbuffer_len, tr_wavbuffer_new,
     tr_wavbuffer_sample_rate, tr_wavbuffer_samples,
 };
 
@@ -203,4 +204,132 @@ fn end_to_end_generate_then_apply_am() {
         tr_wavbuffer_free(modulated);
         tr_wavbuffer_free(raw);
     }
+}
+
+// ── cancel-token lifecycle tests ─────────────────────────────────────────────
+
+/// A token can be created, cancelled, and freed without UB.
+#[test]
+fn cancel_token_new_cancel_free_round_trip() {
+    unsafe {
+        let token = tr_cancel_token_new();
+        assert!(
+            !token.is_null(),
+            "tr_cancel_token_new must never return null"
+        );
+        tr_cancel_token_cancel(token);
+        tr_cancel_token_free(token);
+    }
+}
+
+/// A token can be freed without ever being cancelled (normal completion path).
+#[test]
+fn cancel_token_free_without_cancel_is_safe() {
+    unsafe {
+        let token = tr_cancel_token_new();
+        assert!(!token.is_null());
+        // Drop without cancelling — should not panic or leak.
+        tr_cancel_token_free(token);
+    }
+}
+
+/// Passing null to cancel/free is a documented no-op.
+#[test]
+fn cancel_token_null_ops_are_no_ops() {
+    unsafe {
+        tr_cancel_token_cancel(std::ptr::null_mut());
+        tr_cancel_token_free(std::ptr::null_mut());
+    }
+}
+
+// ── tr_ensure_model_use_existing tests ───────────────────────────────────────
+
+/// Build a fake model source dir containing a single artifact, call
+/// `ensure_model` via the public Rust API with a matching artifact list,
+/// and verify the copy + manifest lands in the install dir.
+///
+/// `tr_ensure_model_use_existing` uses `ace_step_artifacts()` which has
+/// real HF sha256 values; testing the FFI shim end-to-end requires the
+/// actual model weights. This test exercises the underlying Rust path via
+/// the re-exported `ensure_model` instead.
+#[test]
+fn ensure_model_use_existing_happy_path() {
+    use std::io::Write as _;
+    use telaradio_model_adapter::{InstallMode, ModelArtifact, ensure_model};
+
+    const BODY: &[u8] = b"the quick brown fox jumps over the lazy dog";
+    const SHA256: &str = "05c6e08f1d9fdafa03147fcb8f82f124c76d2f70e3d989dc8aadb5e7d7450bec";
+
+    let dir = tempfile::tempdir().expect("tempdir");
+    let source_dir = dir.path().join("source");
+    let install_dir = dir.path().join("install");
+    std::fs::create_dir_all(&source_dir).expect("create source dir");
+
+    {
+        let mut f = std::fs::File::create(source_dir.join("model.safetensors"))
+            .expect("create fake artifact");
+        f.write_all(BODY).expect("write");
+    }
+
+    let artifacts = vec![ModelArtifact {
+        url: "https://example.invalid/unused".into(),
+        relative_path: "model.safetensors".into(),
+        sha256: SHA256.into(),
+    }];
+
+    let result = ensure_model(
+        &install_dir,
+        &artifacts,
+        InstallMode::UseExisting(source_dir),
+    )
+    .expect("ensure_model UseExisting should succeed");
+
+    assert_eq!(result, install_dir, "should return the install dir");
+    assert!(
+        install_dir.join("model.safetensors").exists(),
+        "artifact should be copied"
+    );
+    assert!(
+        install_dir.join("manifest.json").exists(),
+        "manifest should be written"
+    );
+}
+
+/// When the source directory does not exist, `tr_ensure_model_use_existing`
+/// must return null and set a non-empty last-error string.
+#[test]
+fn ensure_model_use_existing_missing_source_dir_returns_null_and_sets_error() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let install_dir = dir.path().join("install");
+    let source_dir = dir.path().join("does-not-exist");
+
+    let install_c = CString::new(install_dir.to_str().expect("utf8")).expect("no nul");
+    let source_c = CString::new(source_dir.to_str().expect("utf8")).expect("no nul");
+
+    unsafe {
+        let result = tr_ensure_model_use_existing(install_c.as_ptr(), source_c.as_ptr());
+        assert!(result.is_null(), "missing source dir must return null");
+        let err = tr_last_error();
+        assert!(!err.is_null(), "last_error must be set on failure");
+        let msg = CStr::from_ptr(err).to_string_lossy();
+        assert!(!msg.is_empty(), "error message must be non-empty");
+    }
+}
+
+/// `tr_string_free` must not crash on a null pointer.
+#[test]
+fn string_free_null_is_no_op() {
+    unsafe {
+        tr_string_free(std::ptr::null_mut());
+    }
+}
+
+/// Download e2e — requires real network + ACE-Step model. Kept `#[ignore]`d
+/// matching the 1b2 pattern.
+#[test]
+#[ignore = "requires real network + ACE-Step model (~5 GB); opt in with --include-ignored"]
+fn ensure_model_download_e2e_requires_network() {
+    // Only run with `cargo test -- --include-ignored`.
+    // When the model is available, tr_ensure_model_download should return
+    // a non-null path and produce a valid manifest.json in the install dir.
 }

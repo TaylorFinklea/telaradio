@@ -2012,6 +2012,7 @@ dependencies = [
  "telaradio-core",
  "telaradio-dsp",
  "telaradio-model-adapter",
+ "tempfile",
 ]
 
 [[package]]
