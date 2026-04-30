@@ -7,6 +7,12 @@
 import Foundation
 import TelaradioFFI
 
+// tr_ace_step_total_bytes() is not exposed by the FFI yet (Step 1 artifacts
+// use placeholder sha256s). This constant is the approximate total download
+// size of ACE-Step v1 3.5B. Progress fractions may drift past 1.0 if the
+// real file sizes differ; the callback clamps to [0.0, 1.0].
+private let aceStepTotalBytes: UInt64 = 5_000_000_000
+
 /// Errors surfaced by the FFI layer.
 enum TelaradioError: Error, CustomStringConvertible {
     case ffi(String)
@@ -133,5 +139,117 @@ enum Telaradio {
             throw lastFFIError("applyAM")
         }
         return WavBuffer(takingOwnership: raw)
+    }
+
+    /// Download ACE-Step model artifacts into `installDir`, resuming any
+    /// partial download. `progress` fires on the main actor with a clamped
+    /// fraction in [0.0, 1.0]. Returns the resolved install directory URL.
+    static func ensureModelDownload(
+        installDir: URL,
+        progress: @escaping (Double) -> Void
+    ) async throws -> URL {
+        try await withCheckedThrowingContinuation { continuation in
+            Task.detached(priority: .userInitiated) {
+                let ctx = ProgressContext(
+                    onProgress: progress,
+                    totalBytes: aceStepTotalBytes
+                )
+                // Retained here; released after the FFI call returns.
+                let ctxPtr = Unmanaged.passRetained(ctx).toOpaque()
+
+                let token = tr_cancel_token_new()
+                defer { tr_cancel_token_free(token) }
+
+                let result = installDir.path(percentEncoded: false).withCString { installCStr in
+                    tr_ensure_model_download(
+                        installCStr,
+                        { rawCtx, bytesWritten in
+                            guard let rawCtx else { return }
+                            let ctx = Unmanaged<ProgressContext>.fromOpaque(rawCtx)
+                                .takeUnretainedValue()
+                            let fraction = min(
+                                1.0,
+                                Double(bytesWritten) / Double(ctx.totalBytes)
+                            )
+                            // Download fires on a background thread; marshal to main actor
+                            // before touching @Published properties on any ObservableObject.
+                            Task { @MainActor in ctx.onProgress(fraction) }
+                        },
+                        ctxPtr,
+                        token
+                    )
+                }
+
+                // Balance the passRetained above.
+                Unmanaged<ProgressContext>.fromOpaque(ctxPtr).release()
+
+                if let cstr = result {
+                    defer { tr_string_free(cstr) }
+                    let path = String(cString: cstr)
+                    continuation.resume(returning: URL(fileURLWithPath: path))
+                } else {
+                    continuation.resume(throwing: lastFFIError("ensureModelDownload"))
+                }
+            }
+        }
+    }
+
+    /// Copy model weights from an existing local directory into `installDir`,
+    /// validating sha256 checksums. Returns the resolved install directory URL.
+    static func ensureModelUseExisting(
+        installDir: URL,
+        sourceDir: URL
+    ) async throws -> URL {
+        try await Task.detached(priority: .userInitiated) {
+            let result = installDir.path(percentEncoded: false).withCString { installCStr in
+                sourceDir.path(percentEncoded: false).withCString { sourceCStr in
+                    tr_ensure_model_use_existing(installCStr, sourceCStr)
+                }
+            }
+            guard let cstr = result else {
+                throw lastFFIError("ensureModelUseExisting")
+            }
+            defer { tr_string_free(cstr) }
+            let path = String(cString: cstr)
+            return URL(fileURLWithPath: path)
+        }.value
+    }
+
+    /// Run ACE-Step generation from a resolved model directory. Spawns the
+    /// Python subprocess, generates audio, and drops the subprocess. Callers
+    /// should surface a clear error when `.venv` is absent — the FFI reports
+    /// the spawn failure via `tr_last_error`.
+    static func generateAceStep(
+        modelDir: URL,
+        prompt: String,
+        seed: UInt64,
+        durationSeconds: UInt32
+    ) async throws -> WavBuffer {
+        try await Task.detached(priority: .userInitiated) {
+            let result: OpaquePointer? = modelDir.path(percentEncoded: false).withCString { mdirCStr in
+                prompt.withCString { promptCStr in
+                    tr_generate_ace_step(mdirCStr, promptCStr, seed, durationSeconds)
+                }
+            }
+            guard let ptr = result else {
+                throw lastFFIError("generateAceStep")
+            }
+            return WavBuffer(takingOwnership: ptr)
+        }.value
+    }
+}
+
+// MARK: - Private helpers
+
+/// Carries the Swift progress closure and the expected total bytes across
+/// the C callback boundary. Held alive via Unmanaged retain for the
+/// duration of tr_ensure_model_download.
+private final class ProgressContext {
+    let onProgress: (Double) -> Void
+    let totalBytes: UInt64
+
+    init(onProgress: @escaping (Double) -> Void, totalBytes: UInt64) {
+        self.onProgress = onProgress
+        self.totalBytes = totalBytes
     }
 }
