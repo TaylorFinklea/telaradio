@@ -1,5 +1,7 @@
 # Telaradio — Project Continuity Doc
 
+Project-specific guidance for any AI coding agent (Claude Code, Codex, Copilot, etc.). Shared agent behavior lives in `~/AGENTS.md`.
+
 > If you just opened this repo and have one minute: skim **What Telaradio is** and **First 30 seconds** below, then read `ARCHITECTURE.md` (recipe format + module boundaries) and `ROADMAP.md` (Phase 1).
 
 ## What Telaradio is
@@ -54,7 +56,7 @@ recipe rather than on copyrighted audio.
 - `recipes/` — hand-seeded starter library lands here in Phase 1; this
   becomes the canonical local cache once GitHub sync is wired up.
 - `.docs/ai/` — cross-session continuity per the global handoff convention
-  (`current-state.md`, `next-steps.md`, `decisions.md`, `roadmap.md`).
+  (`current-state.md`, `decisions.md`, `roadmap.md` — Now/Next/Later lives in roadmap.md).
 - `LICENSE` — verbatim AGPL-3.0.
 - `CLA.md` — stub; formal CLA process opens in Phase 2.
 
@@ -74,18 +76,16 @@ recipe rather than on copyrighted audio.
   layer) insert *after* modulation and *before* output. Do not modulate the
   nature layer — broadband sources lose information under AM.
 
-## First 30 seconds (for a fresh Claude session)
+## First 30 seconds (for a fresh agent session)
 
 1. Read this file end-to-end.
 2. Open `.docs/ai/current-state.md` to find the live session pointer.
 3. Skim `ARCHITECTURE.md` §Recipe format and §Module boundaries.
 4. Open `ROADMAP.md`, find the current phase, look at its checklist.
 5. Run `git log --oneline -5` to verify state matches the doc claims.
-6. Ask the user what they want to work on next, or pick from
-   `.docs/ai/next-steps.md`.
+6. Ask the user what they want to work on next, or pick from `.docs/ai/roadmap.md` Now/Next/Later.
 
-If a phase spec exists in `.docs/ai/phases/` without a matching report, the
-previous session was mid-protocol — resume there instead of starting fresh.
+If a phase spec exists in `.docs/ai/phases/` without a matching report, the previous session was mid-protocol — resume there instead of starting fresh.
 
 ## Out-of-scope reminders (defer, do not build speculatively)
 
@@ -100,9 +100,6 @@ previous session was mid-protocol — resume there instead of starting fresh.
 
 If a session is pulling on one of these, stop and update the roadmap first.
 
-## Conventions inherited from `~/CLAUDE.md`
+## Inherited from `~/AGENTS.md`
 
-- One Bash command per tool call unless genuinely piping.
-- Small descriptive commits by default after code changes; do not push.
-- Use `TaskCreate` / `TaskUpdate` for non-trivial work.
-- AI handoff lives in `.docs/ai/`; update at session end.
+The user-level `~/AGENTS.md` already covers shell-command discipline, commit/push defaults, todo tracking, and the `.docs/ai/` handoff convention. This file only adds Telaradio-specific guidance.
