@@ -1,8 +1,8 @@
 // PlayerViewModel.swift
 //
 // Drives the SwiftUI view. Orchestrates the generate → modulate → play
-// pipeline against a hardcoded example recipe + the mock subprocess.
-// Real-model integration and recipe-loading UX are later phases.
+// pipeline against a hardcoded example recipe. Branches on the configured
+// backend: mock (440 Hz sine) or ACE-Step (real model generation).
 
 import AVFoundation
 import Foundation
@@ -35,12 +35,14 @@ final class PlayerViewModel: ObservableObject {
     private let engine = AVAudioEngine()
     private let player = AVAudioPlayerNode()
     private var pcmBuffer: AVAudioPCMBuffer?
+    private let settings: ModelSettings
 
-    init() {
+    init(settings: ModelSettings) {
+        self.settings = settings
         engine.attach(player)
     }
 
-    /// Load the hardcoded example recipe, generate via the mock, modulate,
+    /// Load the hardcoded example recipe, generate (mock or ACE-Step), modulate,
     /// schedule on the audio engine, and start playback.
     func playExample() async {
         do {
@@ -57,15 +59,29 @@ final class PlayerViewModel: ObservableObject {
             _ = try Telaradio.parseRecipe(json) // validate it parses; we don't use the parsed value yet
 
             status = .generating
-            // Run the heavy work off the main actor.
-            let raw = try await Task.detached {
-                try Telaradio.generateMock(
-                    scriptPath: scriptPath.path,
+
+            let raw: WavBuffer
+            switch settings.backend {
+            case .mock:
+                // Run the heavy work off the main actor.
+                raw = try await Task.detached {
+                    try Telaradio.generateMock(
+                        scriptPath: scriptPath.path,
+                        prompt: "Foggy lofi for deep work",
+                        seed: 1_893_421,
+                        durationSeconds: 5 // short clip for the MVL demo
+                    )
+                }.value
+
+            case .aceStep:
+                let modelDir = settings.modelDir!
+                raw = try await Telaradio.generateAceStep(
+                    modelDir: modelDir,
                     prompt: "Foggy lofi for deep work",
                     seed: 1_893_421,
-                    durationSeconds: 5 // short clip for the MVL demo
+                    durationSeconds: 30
                 )
-            }.value
+            }
 
             status = .modulating
             let modulated = try await Task.detached {
